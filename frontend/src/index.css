@@ -1,3 +1,34 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #FDFBF7;
+    background-image: url('./assets/bg-light.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: #800000;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+}
+
+/* Light organic background container */
+.siyasat-contour-lines {
+  background-image: url('./assets/bg-light.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* Dark maroon organic background container */
+.siyasat-contour-maroon {
+  background-color: #800000;
+  background-image: url('./assets/bg-maroon.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}

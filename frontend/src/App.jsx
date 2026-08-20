@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import HomePage from './HomePage';
+import HomePage from './components/HomePage';
 import RepositoryPage from './components/RepositoryPage';
 import PaperDetailsPage from './components/PaperDetailsPage';
 import UploadPage from './components/UploadPage';
@@ -155,6 +155,64 @@ function App() {
         }
     };
 
+    const onUpdateRole = async (userId, newRole) => {
+        const token = localStorage.getItem('siyasat_token');
+        if (!token) {
+            alert('Authentication required. Please log in again.');
+            return;
+        }
+
+        try {
+            const res = await fetch(`http://localhost:5000/api/admin/users/${userId}/role`, {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ role: newRole })
+            });
+
+            if (res.ok) {
+                await fetchUsers();
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                alert(`Failed to update role: ${errData.message || 'Server error'}`);
+            }
+        } catch (err) {
+            console.error('Error updating user role:', err);
+            alert('Network error while updating user role.');
+        }
+    };
+
+    const onToggleStatus = async (userId, newStatus) => {
+        const token = localStorage.getItem('siyasat_token');
+        if (!token) {
+            alert('Authentication required. Please log in again.');
+            return;
+        }
+
+        try {
+            const res = await fetch(`http://localhost:5000/api/admin/users/${userId}/status`, {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (res.ok) {
+                await fetchUsers();
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                alert(`Failed to update status: ${errData.message || 'Server error'}`);
+            }
+        } catch (err) {
+            console.error('Error toggling status:', err);
+            alert('Network error while updating user status.');
+        }
+    };
+
     const activePage = String(currentPage).trim();
 
     return (
@@ -208,11 +266,13 @@ function App() {
                     />
                 )}
 
-            {activePage === 'users' && currentUser?.role === 'ADMIN' && (
+            {(activePage === 'users' || activePage === 'accounts') && currentUser?.role === 'ADMIN' && (
                 <AccountsPage
                     onNavigate={handleNavigate}
                     currentUser={currentUser}
                     usersList={usersList}
+                    onUpdateRole={onUpdateRole}
+                    onToggleStatus={onToggleStatus}
                 />
             )}
 

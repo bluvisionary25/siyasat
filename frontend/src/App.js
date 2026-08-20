@@ -145,6 +145,67 @@ export default function App() {
   };
 
   // ---------------------------------------------------------------------------
+  // Admin User Management Handlers
+  // ---------------------------------------------------------------------------
+  const onUpdateRole = async (userId, newRole) => {
+    const token = localStorage.getItem('siyasat_token');
+    if (!token) {
+      alert('Authentication required. Please log in again.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${userId}/role`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ role: newRole })
+      });
+
+      if (res.ok) {
+        await fetchUsers();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(`Failed to update role: ${errData.message || 'Server error'}`);
+      }
+    } catch (err) {
+      console.error('Error updating user role:', err);
+      alert('Network error while updating user role.');
+    }
+  };
+
+  const onToggleStatus = async (userId, newStatus) => {
+    const token = localStorage.getItem('siyasat_token');
+    if (!token) {
+      alert('Authentication required. Please log in again.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${userId}/status`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (res.ok) {
+        await fetchUsers();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(`Failed to update status: ${errData.message || 'Server error'}`);
+      }
+    } catch (err) {
+      console.error('Error toggling status:', err);
+      alert('Network error while updating user status.');
+    }
+  };
+
+  // ---------------------------------------------------------------------------
   // Delete Handler — accepts either a paper object or a raw ID
   // ---------------------------------------------------------------------------
   const handleDeletePaper = async (paperOrId) => {
@@ -250,11 +311,13 @@ export default function App() {
         )}
 
       {/* ACCOUNTS (ADMIN only) */}
-      {activePage === 'users' && userRole === 'ADMIN' && (
+      {(activePage === 'users' || activePage === 'accounts') && userRole === 'ADMIN' && (
         <AccountsPage
           onNavigate={handleNavigate}
           currentUser={currentUser}
           usersList={usersList}
+          onUpdateRole={onUpdateRole}
+          onToggleStatus={onToggleStatus}
           onLogout={handleLogout}
         />
       )}
