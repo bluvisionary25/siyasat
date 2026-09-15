@@ -1,7 +1,17 @@
 import React from 'react';
 import SiyasatLogo from './SiyasatLogo';
 
-const Navbar = ({ activePage = 'home', onNavigate, currentUser, onLoginClick }) => {
+const Navbar = ({
+  activePage = 'home',
+  onNavigate,
+  currentUser,
+  onLoginClick,
+  darkHeader = false // Default to false (light background) unless specified e.g. on maroon hero
+}) => {
+  // If activePage is 'home' and darkHeader is explicitly passed or default true on home
+  // but let's be context-aware: if darkHeader is explicitly provided, use it; otherwise, home default to true, others false
+  const isDark = darkHeader !== undefined ? darkHeader : activePage === 'home';
+
   const isAdmin = currentUser?.role === 'ADMIN';
   const isAdviser = currentUser?.role === 'ADVISER';
   const isElevatedUser = isAdmin || isAdviser;
@@ -20,83 +30,118 @@ const Navbar = ({ activePage = 'home', onNavigate, currentUser, onLoginClick }) 
   };
 
   return (
-    <header className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between relative z-20">
-      {/* BRAND LOGO */}
-      <div 
-        onClick={() => handleNav('home')} 
-        className="flex items-center cursor-pointer select-none group transition-transform hover:scale-105"
-      >
-        <SiyasatLogo variant="maroon" size="md" />
+    <header className="max-w-7xl mx-auto px-6 py-6 relative z-30 flex items-center justify-between">
+      {/* 1. LEFT: Brand Logo (pure white on dark/red, deep crimson on light/white) */}
+      <div className="flex-1 flex items-center justify-start">
+        <div
+          onClick={() => handleNav('home')}
+          className="cursor-pointer select-none group transition-transform hover:scale-105"
+        >
+          <SiyasatLogo variant={isDark ? 'white' : 'maroon'} size="md" />
+        </div>
       </div>
 
-      {/* GLASS CAPSULE NAVIGATION BAR */}
-      <nav className="flex items-center space-x-1 bg-[#E8E2D9]/70 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/60 shadow-xs text-xs font-semibold">
-        <button
-          onClick={() => handleNav('home')}
-          className={`px-5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
-            activePage === 'home'
-              ? 'bg-[#F5B842] text-[#800000] font-bold shadow-xs'
-              : 'text-[#800000] hover:bg-black/5'
+      {/* 2. CENTER: Horizontally Centered Floating Nav Capsule Pill */}
+      <div className="flex-shrink-0 flex items-center justify-center">
+        <nav
+          className={`flex items-center space-x-1 sm:space-x-2 backdrop-blur-md rounded-full px-2.5 sm:px-3 py-1.5 border shadow-sm text-xs font-semibold transition-colors ${
+            isDark
+              ? 'bg-white/20 border-white/25 text-white shadow-black/10'
+              : 'bg-black/5 sm:bg-gray-100/90 border-gray-200/80 text-[#7A0C0E]'
           }`}
         >
-          Home
-        </button>
-
-        <button
-          onClick={() => handleNav('repository')}
-          className={`px-5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
-            activePage === 'repository'
-              ? 'bg-[#F5B842] text-[#800000] font-bold shadow-xs'
-              : 'text-[#800000] hover:bg-black/5'
-          }`}
-        >
-          Repository
-        </button>
-
-        {isElevatedUser && (
+          {/* HOME */}
           <button
-            onClick={() => handleNav('upload')}
-            className={`px-5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
-              activePage === 'upload'
-                ? 'bg-[#F5B842] text-[#800000] font-bold shadow-xs'
-                : 'text-[#800000] hover:bg-black/5'
+            onClick={() => handleNav('home')}
+            className={`px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
+              activePage === 'home'
+                ? isDark
+                  ? 'bg-[#E59819] text-[#7A0C0E] font-bold shadow-xs'
+                  : 'bg-[#E59819] text-white font-bold shadow-xs'
+                : isDark
+                  ? 'text-white/85 hover:text-white hover:bg-white/15'
+                  : 'text-gray-700 hover:text-[#7A0C0E] hover:bg-black/5'
             }`}
           >
-            Upload
+            Home
           </button>
-        )}
 
-        {isAdmin && (
+          {/* REPOSITORY */}
           <button
-            onClick={() => handleNav('users')}
-            className={`px-5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
-              activePage === 'users' || activePage === 'accounts'
-                ? 'bg-[#F5B842] text-[#800000] font-bold shadow-xs'
-                : 'text-[#800000] hover:bg-black/5'
+            onClick={() => handleNav('repository')}
+            className={`px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
+              activePage === 'repository'
+                ? isDark
+                  ? 'bg-[#E59819] text-[#7A0C0E] font-bold shadow-xs'
+                  : 'bg-[#E59819] text-white font-bold shadow-xs'
+                : isDark
+                  ? 'text-white/85 hover:text-white hover:bg-white/15'
+                  : 'text-gray-700 hover:text-[#7A0C0E] hover:bg-black/5'
             }`}
           >
-            Accounts
+            Repository
           </button>
-        )}
 
-        <button
-          onClick={() => handleNav('about')}
-          className={`px-5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
-            activePage === 'about'
-              ? 'bg-[#F5B842] text-[#800000] font-bold shadow-xs'
-              : 'text-[#800000] hover:bg-black/5'
-          }`}
-        >
-          About Us
-        </button>
-      </nav>
+          {/* UPLOAD (Adviser & Admin) */}
+          {isElevatedUser && (
+            <button
+              onClick={() => handleNav('upload')}
+              className={`px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
+                activePage === 'upload'
+                  ? isDark
+                    ? 'bg-[#E59819] text-[#7A0C0E] font-bold shadow-xs'
+                    : 'bg-[#E59819] text-white font-bold shadow-xs'
+                  : isDark
+                    ? 'text-white/85 hover:text-white hover:bg-white/15'
+                    : 'text-gray-700 hover:text-[#7A0C0E] hover:bg-black/5'
+              }`}
+            >
+              Upload
+            </button>
+          )}
 
-      {/* USER AVATAR / LOGIN BUTTON */}
-      <div>
+          {/* ACCOUNTS (Admin) */}
+          {isAdmin && (
+            <button
+              onClick={() => handleNav('users')}
+              className={`px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
+                activePage === 'users' || activePage === 'accounts'
+                  ? isDark
+                    ? 'bg-[#E59819] text-[#7A0C0E] font-bold shadow-xs'
+                    : 'bg-[#E59819] text-white font-bold shadow-xs'
+                  : isDark
+                    ? 'text-white/85 hover:text-white hover:bg-white/15'
+                    : 'text-gray-700 hover:text-[#7A0C0E] hover:bg-black/5'
+              }`}
+            >
+              Accounts
+            </button>
+          )}
+
+          {/* ABOUT US */}
+          <button
+            onClick={() => handleNav('about')}
+            className={`px-4 sm:px-5 py-1.5 rounded-full transition-all duration-200 cursor-pointer ${
+              activePage === 'about'
+                ? isDark
+                  ? 'bg-[#E59819] text-[#7A0C0E] font-bold shadow-xs'
+                  : 'bg-[#E59819] text-white font-bold shadow-xs'
+                : isDark
+                  ? 'text-white/85 hover:text-white hover:bg-white/15'
+                  : 'text-gray-700 hover:text-[#7A0C0E] hover:bg-black/5'
+            }`}
+          >
+            About Us
+          </button>
+        </nav>
+      </div>
+
+      {/* 3. RIGHT: Aligned Circular User Avatar / Login Button */}
+      <div className="flex-1 flex items-center justify-end">
         {currentUser ? (
           <button
             onClick={() => handleNav('profile')}
-            className="w-10 h-10 rounded-full bg-[#F5B842] text-white font-bold text-lg flex items-center justify-center shadow-md border-2 border-white/80 cursor-pointer hover:scale-105 transition-all"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#E59819] text-[#7A0C0E] font-bold text-sm sm:text-base flex items-center justify-center shadow-md border-2 border-white/80 cursor-pointer hover:scale-105 transition-all"
             title={currentUser.full_name || currentUser.email}
           >
             {getInitial()}
@@ -104,7 +149,7 @@ const Navbar = ({ activePage = 'home', onNavigate, currentUser, onLoginClick }) 
         ) : (
           <button
             onClick={onLoginClick}
-            className="px-6 py-2 bg-[#800000] hover:bg-[#660000] text-white font-semibold text-xs rounded-full shadow-sm cursor-pointer transition-all"
+            className="px-5 sm:px-6 py-2 bg-[#E59819] hover:bg-[#d98b0f] text-white font-bold text-xs rounded-full shadow-sm cursor-pointer transition-all"
           >
             Log In
           </button>

@@ -102,6 +102,39 @@ const AboutUsPage = ({ onNavigate, currentUser }) => {
           </p>
         </section>
 
+        {/* CREATORS SECTION */}
+        <section className="space-y-4 pt-4 border-t border-gray-200/50 mt-8 pb-8">
+          <h2 className="text-xl font-extrabold text-[#800000] font-serif text-center">
+            Creators
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-center max-w-3xl mx-auto">
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Downie, Hailie Nichole S.</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Esteban, Emilio</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Gervacio, Rochel Rey G.</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Japson, Althea Myr C.</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Ogena, Angelo</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Ortiz, John Lloyd</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Ruiz, Prince Cathric</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Valdez, Kiervin C.</p>
+            </div>
+          </div>
+        </section>
+
       </main>
     </div>
   );
