@@ -4,7 +4,7 @@ import SiyasatLogo from './SiyasatLogo';
 const Navbar = ({
   activePage = 'home',
   onNavigate,
-  currentUser,
+  currentUser = null,
   onLoginClick,
   darkHeader = false // Default to false (light background) unless specified e.g. on maroon hero
 }) => {
@@ -12,8 +12,9 @@ const Navbar = ({
   // but let's be context-aware: if darkHeader is explicitly provided, use it; otherwise, home default to true, others false
   const isDark = darkHeader !== undefined ? darkHeader : activePage === 'home';
 
-  const isAdmin = currentUser?.role === 'ADMIN';
-  const isAdviser = currentUser?.role === 'ADVISER';
+  const role = currentUser?.role?.toUpperCase();
+  const isAdmin = role === 'ADMIN';
+  const isAdviser = role === 'ADVISER';
   const isElevatedUser = isAdmin || isAdviser;
 
   const handleNav = (page) => {
@@ -23,10 +24,10 @@ const Navbar = ({
   };
 
   const getInitial = () => {
-    if (!currentUser) return 'A';
-    if (currentUser.full_name) return currentUser.full_name.charAt(0).toUpperCase();
-    if (currentUser.email) return currentUser.email.charAt(0).toUpperCase();
-    return 'A';
+    if (!currentUser) return '';
+    if (currentUser.full_name) return currentUser.full_name.trim().charAt(0).toUpperCase();
+    if (currentUser.email) return currentUser.email.trim().charAt(0).toUpperCase();
+    return role ? role.charAt(0).toUpperCase() : 'U';
   };
 
   return (

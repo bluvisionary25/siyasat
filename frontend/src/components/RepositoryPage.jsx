@@ -22,8 +22,44 @@ const RepositoryPage = ({ onNavigate, currentUser, thesesList = [], onSelectPape
   const [selectedPaperForAi, setSelectedPaperForAi] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiError, setAiError] = useState(null);
+  const [openPaperAccordionId, setOpenPaperAccordionId] = useState(null);
 
   const [aiGaps, setAiGaps] = useState(null);
+
+  // Global AI Gap Analysis state
+  const [isGlobalAnalyzing, setIsGlobalAnalyzing] = useState(false);
+  const [globalAiResult, setGlobalAiResult] = useState(null);
+  const [globalAiError, setGlobalAiError] = useState(null);
+  const [openAccordionId, setOpenAccordionId] = useState(null);
+
+  const handleGlobalAnalysis = async () => {
+    if (!canUseAi) {
+      alert('AI Gap Analysis is reserved exclusively for Students and Advisers.');
+      return;
+    }
+    
+    setIsGlobalAnalyzing(true);
+    setGlobalAiError(null);
+    setGlobalAiResult(null);
+    
+    try {
+      const res = await fetch('http://localhost:5000/api/analyze-global-gaps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (res.ok && data.result) {
+        setGlobalAiResult(data.result);
+      } else {
+        setGlobalAiError(data.message || 'AI could not generate global gaps. Please try again.');
+      }
+    } catch (err) {
+      console.error('Global AI Analysis Error:', err);
+      setGlobalAiError('Could not connect to AI service. Please check your connection.');
+    } finally {
+      setIsGlobalAnalyzing(false);
+    }
+  };
 
   const papersSource = thesesList;
 
@@ -146,6 +182,137 @@ const RepositoryPage = ({ onNavigate, currentUser, thesesList = [], onSelectPape
             <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#800000]" />
           </div>
         </div>
+
+        {/* GLOBAL AI GAP ANALYSIS SECTION */}
+        {canUseAi && (
+          <div className="max-w-6xl mx-auto pt-4 flex flex-col space-y-4">
+            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 bg-[#FAF8F5]/90 border border-[#F5B842]/50 rounded-2xl p-4 shadow-sm">
+              <div className="space-y-1">
+                <h3 className="text-sm font-extrabold text-[#800000] flex items-center space-x-2">
+                  <Sparkles className="w-4 h-4 text-[#F5B842]" />
+                  <span>Global Repository Analysis</span>
+                </h3>
+                <p className="text-xs text-gray-600 font-medium">
+                  Identify overarching research gaps across the latest theses in the repository.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleGlobalAnalysis}
+                disabled={isGlobalAnalyzing}
+                className="px-5 py-2.5 bg-[#800000] hover:bg-[#600000] text-white font-bold text-xs rounded-full flex items-center justify-center space-x-2 shadow-md transition-all disabled:opacity-50 shrink-0"
+              >
+                {isGlobalAnalyzing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Synthesizing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 text-[#F5B842]" />
+                    <span>Analyze Repository Research Gaps</span>
+                  </>
+                )}
+              </button>
+            </div>
+            
+            {/* DISCLAIMER BANNER */}
+            {(globalAiResult || isGlobalAnalyzing || globalAiError) && (
+              <div className="bg-amber-50 border-l-4 border-amber-400 p-3 rounded-r-lg shadow-sm">
+                <p className="text-xs text-amber-800 font-medium">
+                  <span className="font-bold">Notice:</span> AI-generated research gaps are synthesized strictly from internal repository abstracts. Outputs may contain inaccuracies and should not serve as the sole justification for thesis proposals.
+                </p>
+              </div>
+            )}
+
+            {/* GLOBAL RESULTS OR LOADING OR ERROR */}
+            {isGlobalAnalyzing && (
+              <div className="bg-white rounded-2xl p-8 border border-gray-200/60 shadow-sm text-center space-y-3">
+                 <Loader2 className="w-8 h-8 text-[#F5B842] animate-spin mx-auto" />
+                 <p className="text-xs font-bold text-[#800000]">Synthesizing repository-wide gaps...</p>
+                 <p className="text-[11px] text-gray-500">Cross-referencing abstracts and extracting missing methodologies...</p>
+              </div>
+            )}
+
+            {globalAiError && (
+              <div className="bg-white rounded-2xl p-8 border border-red-200 shadow-sm text-center">
+                <p className="text-xs font-bold text-red-600">{globalAiError}</p>
+              </div>
+            )}
+
+            {globalAiResult && !isGlobalAnalyzing && (
+              <div className="bg-white rounded-3xl p-6 border border-gray-200/90 shadow-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                  <h3 className="text-sm font-extrabold text-[#800000]">
+                    Identified Research Gaps
+                  </h3>
+                  <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#800000] px-3 py-1 rounded-full border border-gray-200">
+                    Analyzed {globalAiResult.analyzed_count} papers
+                  </span>
+                </div>
+                <p className="text-xs text-gray-700 italic border-l-2 border-[#F5B842] pl-3 py-1">
+                  {globalAiResult.domain_summary}
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {globalAiResult.gaps.map((gap, index) => (
+                    <div key={index} className="bg-[#FAF8F5] rounded-xl p-4 border border-gray-200/60 shadow-2xs flex flex-col justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-start space-x-2">
+                           <div className="w-5 h-5 rounded-full bg-[#800000] text-white font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                             {index + 1}
+                           </div>
+                           <h4 className="text-xs font-extrabold text-[#800000] leading-snug">{gap.gap_title}</h4>
+                        </div>
+                        <p className="text-[11px] text-gray-600 font-medium leading-relaxed pl-7">
+                          {gap.description}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 pl-7">
+                        <button
+                          onClick={() => setOpenAccordionId(openAccordionId === index ? null : index)}
+                          className="flex items-center space-x-1 text-[10px] font-bold text-[#800000] hover:text-[#F5B842] transition-colors cursor-pointer"
+                        >
+                          <span>View Cited Sources ({gap.supporting_papers?.length || 0} Papers)</span>
+                          <ChevronDown className={`w-3 h-3 transform transition-transform ${openAccordionId === index ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {openAccordionId === index && (
+                          <div className="mt-3 space-y-2 max-h-48 overflow-y-auto pr-2">
+                            {gap.supporting_papers?.map((sp, spIdx) => {
+                              const citedPaper = papersSource.find(p => p.id === sp.id || (p.title && p.title.toLowerCase() === (sp.title || '').toLowerCase()));
+                              return (
+                                <div key={spIdx} className="bg-white p-2.5 rounded-lg border border-gray-100 shadow-sm">
+                                  <div className="flex items-start justify-between">
+                                    <span className="text-[9px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded uppercase">ID: {sp.id}</span>
+                                    <span className="text-[9px] font-bold text-gray-500">{sp.year}</span>
+                                  </div>
+                                  <p 
+                                    className={`text-[10px] font-bold mt-1 leading-snug ${citedPaper ? 'text-[#800000] hover:underline cursor-pointer' : 'text-gray-800'}`}
+                                    onClick={() => {
+                                      if (citedPaper) {
+                                        if (onSelectPaper) onSelectPaper(citedPaper);
+                                        onNavigate('paper-details', citedPaper);
+                                      }
+                                    }}
+                                  >
+                                    {sp.title}
+                                  </p>
+                                  <p className="text-[9px] text-gray-500 italic mt-1">{sp.note}</p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 2-COLUMN REPOSITORY & AI GAP ANALYSIS GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto pt-2">
@@ -333,22 +500,103 @@ const RepositoryPage = ({ onNavigate, currentUser, thesesList = [], onSelectPape
               /* GAP ITEMS LIST */
               <div className="space-y-4 pt-1">
                 {aiGaps.map((gap, index) => (
-                  <div key={gap.id || index} className="flex items-start space-x-3.5 bg-white p-3.5 rounded-2xl border border-gray-200/60 shadow-2xs">
+                  <div key={gap.id || index} className="flex flex-col bg-white p-4 rounded-2xl border border-gray-200/60 shadow-2xs">
                     
-                    {/* NUMBERED MAROON CIRCLE BADGE */}
-                    <div className="w-6 h-6 rounded-full bg-[#800000] text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
-                      {index + 1}
+                    <div className="flex items-start space-x-3.5">
+                      {/* NUMBERED MAROON CIRCLE BADGE */}
+                      <div className="w-6 h-6 rounded-full bg-[#800000] text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+                        {index + 1}
+                      </div>
+
+                      {/* GAP CONTENT */}
+                      <div className="space-y-1 w-full">
+                        <h4 className="text-xs font-extrabold text-[#800000] leading-snug">
+                          {gap.title}
+                        </h4>
+                        <p className="text-[11px] text-gray-600 leading-relaxed font-medium">
+                          {gap.desc || gap.description}
+                        </p>
+                      </div>
                     </div>
 
-                    {/* GAP CONTENT */}
-                    <div className="space-y-1">
-                      <h4 className="text-xs font-extrabold text-[#800000] leading-snug">
-                        {gap.title}
-                      </h4>
-                      <p className="text-[11px] text-gray-600 leading-relaxed font-medium">
-                        {gap.desc || gap.description}
-                      </p>
-                    </div>
+                    {/* EXPANDABLE ACCORDION FOR CITATIONS */}
+                    {((gap.cited_papers && gap.cited_papers.length > 0) || (gap.online_references && gap.online_references.length > 0)) && (
+                      <div className="mt-3 pl-9 border-t border-gray-100 pt-3">
+                        <button
+                          onClick={() => setOpenPaperAccordionId(openPaperAccordionId === index ? null : index)}
+                          className="flex items-center space-x-1 text-[10px] font-bold text-[#800000] hover:text-[#F5B842] transition-colors cursor-pointer"
+                        >
+                          <span>View Cited References ({(gap.cited_papers?.length || 0) + (gap.online_references?.length || 0)})</span>
+                          <ChevronDown className={`w-3 h-3 transform transition-transform ${openPaperAccordionId === index ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {openPaperAccordionId === index && (
+                          <div className="mt-3 space-y-4 max-h-60 overflow-y-auto pr-2">
+                            {/* Section A: Internal Repository Context */}
+                            {gap.cited_papers && gap.cited_papers.length > 0 && (
+                              <div className="space-y-2">
+                                <h5 className="text-[10px] font-extrabold text-gray-700 uppercase tracking-wider">
+                                  🏛️ Department Repository Footprint
+                                </h5>
+                                {gap.cited_papers.map((sp, spIdx) => {
+                                  const citedPaper = papersSource.find(p => p.id === sp.id || (p.title && p.title.toLowerCase() === (sp.title || '').toLowerCase()));
+                                  return (
+                                    <div key={spIdx} className="bg-[#FAF8F5] p-2.5 rounded-lg border border-gray-200/60 shadow-sm">
+                                      <div className="flex items-start justify-between">
+                                        <span className="text-[9px] font-bold bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded uppercase">ID: {sp.id || 'N/A'}</span>
+                                        {sp.year && <span className="text-[9px] font-bold text-gray-500">{sp.year}</span>}
+                                      </div>
+                                      <p 
+                                        className={`text-[10px] font-bold mt-1 leading-snug ${citedPaper ? 'text-[#800000] hover:underline cursor-pointer' : 'text-gray-800'}`}
+                                        onClick={() => {
+                                          if (citedPaper) {
+                                            if (onSelectPaper) onSelectPaper(citedPaper);
+                                            onNavigate('paper-details', citedPaper);
+                                          }
+                                        }}
+                                      >
+                                        {sp.title}
+                                      </p>
+                                      <p className="text-[9px] text-gray-600 italic mt-1 border-l-2 border-[#F5B842] pl-2">{sp.note}</p>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {/* Section B: Global Published Literature (Peer-Reviewed) */}
+                            {gap.online_references && gap.online_references.length > 0 && (
+                              <div className="space-y-2">
+                                <h5 className="text-[10px] font-extrabold text-gray-700 uppercase tracking-wider">
+                                  🌐 Global Published Literature (Peer-Reviewed DOIs)
+                                </h5>
+                                {gap.online_references.slice(0, 3).map((ref, refIdx) => (
+                                  <div key={refIdx} className="bg-white p-2.5 rounded-lg border border-[#F5B842]/40 shadow-sm">
+                                    <div className="flex items-start justify-between">
+                                      <span className="text-[9px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded flex items-center">Verified Academic Publication</span>
+                                      <span className="text-[9px] font-bold text-gray-500">{ref.year}</span>
+                                    </div>
+                                    <p className="text-[10px] font-bold mt-1 leading-snug text-gray-900">
+                                      {ref.title}
+                                    </p>
+                                    <p className="text-[9px] text-gray-600 mt-1">
+                                      {ref.authors} &mdash; <span className="italic">{ref.journal}</span>
+                                    </p>
+                                    {ref.doi_url && ref.doi_url.startsWith('http') && (
+                                      <div className="mt-2">
+                                        <a href={ref.doi_url} target="_blank" rel="noopener noreferrer" className="text-[9px] font-bold text-blue-600 hover:underline">
+                                          View Published Study / DOI ↗
+                                        </a>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                   </div>
                 ))}

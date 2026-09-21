@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Edit3, Trash2, ArrowLeft, Sparkles, Loader2, X } from 'lucide-react';
+import { Download, Edit3, Trash2, ArrowLeft, Sparkles, Loader2, X, ChevronDown } from 'lucide-react';
 import Navbar from './Navbar';
 
 const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper }) => {
@@ -17,6 +17,8 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper }) => 
   const [showAiModal, setShowAiModal] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiGaps, setAiGaps] = useState([]);
+  const [aiError, setAiError] = useState(null);
+  const [openPaperAccordionId, setOpenPaperAccordionId] = useState(null);
 
   const defaultPaper = {
     id: 1,
@@ -32,15 +34,17 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper }) => 
   const handleRunAiAnalysis = async () => {
     setShowAiModal(true);
     setIsAnalyzing(true);
+    setAiError(null);
+    setAiGaps([]);
 
     try {
-      const res = await fetch('http://localhost:5000/api/analyze-gaps', {
+      const res = await fetch('http://localhost:5000/api/analyze-single-gap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id: p.id || p.thesis_id || p._id || -1,
           title: p.title,
           abstract: p.abstract,
-          department: p.branch || p.department,
           keywords: p.keywords
         })
       });
@@ -49,17 +53,11 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper }) => 
       if (res.ok && data.gaps && Array.isArray(data.gaps) && data.gaps.length > 0) {
         setAiGaps(data.gaps);
       } else {
-        setAiGaps([
-          { id: 1, title: 'Limited multi-season validation', desc: 'Efficiency data is restricted to sunny periods with limited multi-seasonal field metrics.' },
-          { id: 2, title: 'Adoption cost barriers', desc: 'Capital costs remain high for small-scale operations without co-op subsidy structures.' }
-        ]);
+        setAiError(data.message || 'AI could not generate gaps for this paper.');
       }
     } catch (err) {
       console.error('AI Analysis Error:', err);
-      setAiGaps([
-        { id: 1, title: 'Limited multi-season validation', desc: 'Efficiency data is restricted to sunny periods with limited multi-seasonal field metrics.' },
-        { id: 2, title: 'Adoption cost barriers', desc: 'Capital costs remain high for small-scale operations without co-op subsidy structures.' }
-      ]);
+      setAiError('Could not connect to AI service.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -275,25 +273,111 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper }) => 
               </div>
             ) : (
               <div className="space-y-4">
+                {aiError && (
+                  <div className="bg-red-50 text-red-600 p-3 rounded-lg text-xs font-bold text-center">
+                    {aiError}
+                  </div>
+                )}
                 {aiGaps.map((gap, idx) => (
-                  <div key={gap.id || idx} className="flex items-start space-x-3.5 bg-white p-4 rounded-2xl border border-gray-200/80 shadow-2xs">
-                    <div className="w-6 h-6 rounded-full bg-[#800000] text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
-                      {idx + 1}
+                  <div key={gap.id || idx} className="flex flex-col bg-white p-4 rounded-2xl border border-gray-200/80 shadow-2xs">
+                    <div className="flex items-start space-x-3.5">
+                      <div className="w-6 h-6 rounded-full bg-[#800000] text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+                        {idx + 1}
+                      </div>
+                      <div className="space-y-1 w-full">
+                        <h4 className="text-xs md:text-sm font-extrabold text-[#800000]">
+                          {gap.gap_title || gap.title}
+                        </h4>
+                        <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                          {gap.description || gap.desc}
+                        </p>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <h4 className="text-xs md:text-sm font-extrabold text-[#800000]">
-                        {gap.title}
-                      </h4>
-                      <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                        {gap.desc || gap.description}
-                      </p>
-                    </div>
+
+                    {/* EXPANDABLE ACCORDION FOR CITATIONS */}
+                    {((gap.cited_papers && gap.cited_papers.length > 0) || (gap.online_references && gap.online_references.length > 0)) && (
+                      <div className="mt-3 pl-9 border-t border-gray-100 pt-3">
+                        <button
+                          onClick={() => setOpenPaperAccordionId(openPaperAccordionId === idx ? null : idx)}
+                          className="flex items-center space-x-1 text-[10px] font-bold text-[#800000] hover:text-[#F5B842] transition-colors cursor-pointer"
+                        >
+                          <span>View Cited References ({(gap.cited_papers?.length || 0) + (gap.online_references?.length || 0)})</span>
+                          <ChevronDown className={`w-3 h-3 transform transition-transform ${openPaperAccordionId === idx ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {openPaperAccordionId === idx && (
+                          <div className="mt-3 space-y-4 max-h-60 overflow-y-auto pr-2">
+                            {/* Section A: Internal Repository Context */}
+                            {gap.cited_papers && gap.cited_papers.length > 0 && (
+                              <div className="space-y-2">
+                                <h5 className="text-[10px] font-extrabold text-gray-700 uppercase tracking-wider">
+                                  🏛️ Department Repository Footprint
+                                </h5>
+                                {gap.cited_papers.map((sp, spIdx) => (
+                                  <div key={spIdx} className="bg-[#FAF8F5] p-2.5 rounded-lg border border-gray-200/60 shadow-sm">
+                                    <div className="flex items-start justify-between">
+                                      <span className="text-[9px] font-bold bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded uppercase">ID: {sp.id || 'N/A'}</span>
+                                      {sp.year && <span className="text-[9px] font-bold text-gray-500">{sp.year}</span>}
+                                    </div>
+                                    <p 
+                                      className={`text-[10px] font-bold mt-1 leading-snug text-[#800000] hover:underline cursor-pointer`}
+                                      onClick={() => {
+                                        setShowAiModal(false);
+                                        const relatedPaper = { id: sp.id, title: sp.title };
+                                        if (onNavigate) onNavigate('paper-details', relatedPaper);
+                                      }}
+                                    >
+                                      {sp.title}
+                                    </p>
+                                    <p className="text-[9px] text-gray-600 italic mt-1 border-l-2 border-[#F5B842] pl-2">{sp.note}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Section B: Global Published Literature (Peer-Reviewed) */}
+                            {gap.online_references && gap.online_references.length > 0 && (
+                              <div className="space-y-2">
+                                <h5 className="text-[10px] font-extrabold text-gray-700 uppercase tracking-wider">
+                                  🌐 Global Published Literature (Peer-Reviewed DOIs)
+                                </h5>
+                                {gap.online_references.slice(0, 3).map((ref, refIdx) => (
+                                  <div key={refIdx} className="bg-white p-2.5 rounded-lg border border-[#F5B842]/40 shadow-sm">
+                                    <div className="flex items-start justify-between">
+                                      <span className="text-[9px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded flex items-center">Verified Academic Publication</span>
+                                      <span className="text-[9px] font-bold text-gray-500">{ref.year}</span>
+                                    </div>
+                                    <p className="text-[10px] font-bold mt-1 leading-snug text-gray-900">
+                                      {ref.title}
+                                    </p>
+                                    <p className="text-[9px] text-gray-600 mt-1">
+                                      {ref.authors} &mdash; <span className="italic">{ref.journal}</span>
+                                    </p>
+                                    {ref.doi_url && ref.doi_url.startsWith('http') && (
+                                      <div className="mt-2">
+                                        <a href={ref.doi_url} target="_blank" rel="noopener noreferrer" className="text-[9px] font-bold text-blue-600 hover:underline">
+                                          View Published Study / DOI ↗
+                                        </a>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                   </div>
                 ))}
               </div>
             )}
 
-            <div className="pt-2 text-right">
+            <div className="pt-2 flex flex-col md:flex-row items-center justify-between border-t border-gray-200/80 mt-4 gap-4">
+              <p className="text-[10px] text-gray-500 italic max-w-sm">
+                Disclaimer: This tool's outputs are generated by AI and may not be 100% accurate. They should not be used as the sole basis for research.
+              </p>
               <button
                 type="button"
                 onClick={() => setShowAiModal(false)}

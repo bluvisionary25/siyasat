@@ -10,14 +10,56 @@ import ProfilePage from './components/ProfilePage';
 import AboutUsPage from './components/AboutUsPage';
 import AuthModal from './components/AuthModal';
 
+const API_BASE = 'http://localhost:5000/api';
+
+// Helper to restore session strictly if valid session exists in localStorage
+const getValidSessionUser = () => {
+    try {
+        const token = localStorage.getItem('siyasat_token');
+        const savedUserStr = localStorage.getItem('siyasat_user');
+        if (!token || !savedUserStr) {
+            return null;
+        }
+
+        // Verify JWT expiration if it is a standard JWT token
+        const parts = token.split('.');
+        if (parts.length === 3) {
+            const payloadBase64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            const payloadJson = decodeURIComponent(
+                atob(payloadBase64)
+                    .split('')
+                    .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            const decoded = JSON.parse(payloadJson);
+            if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+                localStorage.removeItem('siyasat_token');
+                localStorage.removeItem('siyasat_user');
+                return null;
+            }
+        }
+
+        const parsedUser = JSON.parse(savedUserStr);
+        const role = parsedUser?.role?.toUpperCase();
+        // Only restore elevated ADMIN or ADVISER view if valid session exists
+        if (role === 'ADMIN' || role === 'ADVISER') {
+            return parsedUser;
+        }
+        return null;
+    } catch (err) {
+        console.warn('Invalid session in localStorage, clearing:', err);
+        localStorage.removeItem('siyasat_token');
+        localStorage.removeItem('siyasat_user');
+        return null;
+    }
+};
+
 function App() {
     const [currentPage, setCurrentPage] = useState('home');
 
-    const [currentUser, setCurrentUser] = useState({
-        id: 1,
-        full_name: 'Admin User',
-        role: 'ADMIN'
-    });
+    // Public/unauthenticated users strictly load as guests (null).
+    // Only restore ADMIN or ADVISER view if a valid session exists in localStorage.
+    const [currentUser, setCurrentUser] = useState(() => getValidSessionUser());
 
     const [selectedPaper, setSelectedPaper] = useState(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
@@ -26,7 +68,11 @@ function App() {
 
     useEffect(() => {
         fetchTheses();
-    }, []);
+        const token = localStorage.getItem('siyasat_token');
+        if (token && currentUser?.role === 'ADMIN') {
+            fetchUsers();
+        }
+    }, [currentUser]);
 
     const fetchTheses = async () => {
         try {
@@ -61,18 +107,34 @@ function App() {
         }
     };
 
-    const handleLoginSuccess = (userData, token) => {
-        localStorage.setItem('siyasat_token', token);
+    const handleLoginSuccess = (arg1, arg2) => {
+        let token = '';
+        let userData = null;
+
+        if (typeof arg1 === 'string') {
+            token = arg1;
+            userData = arg2;
+        } else if (typeof arg2 === 'string') {
+            token = arg2;
+            userData = arg1;
+        } else if (arg1 && arg1.token) {
+            token = arg1.token;
+            userData = arg1.user || arg1;
+        }
+
+        if (token) localStorage.setItem('siyasat_token', token);
+        if (userData) localStorage.setItem('siyasat_user', JSON.stringify(userData));
         setCurrentUser(userData);
         setShowAuthModal(false);
 
-        if (userData.role === 'ADMIN') {
+        if (userData?.role === 'ADMIN') {
             fetchUsers();
         }
     };
 
     const handleLogout = () => {
         localStorage.removeItem('siyasat_token');
+        localStorage.removeItem('siyasat_user');
         setCurrentUser(null);
         setCurrentPage('home');
     };
@@ -225,7 +287,9 @@ function App() {
                     onSelectPaper={(paper) => setSelectedPaper(paper)}
                     onOpenAuth={() => setShowAuthModal(true)}
                     onLoginClick={() => setShowAuthModal(true)}
+                    onLoginSuccess={handleLoginSuccess}
                     onGoToPortal={() => handleNavigate('repository')}
+                    onLogout={handleLogout}
                 />
             )}
 
@@ -301,8 +365,10 @@ function App() {
 
             {showAuthModal && (
                 <AuthModal
+                    isOpen={showAuthModal}
                     onClose={() => setShowAuthModal(false)}
                     onLoginSuccess={handleLoginSuccess}
+                    API_BASE={API_BASE}
                 />
             )}
         </div>

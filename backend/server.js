@@ -11,6 +11,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'siyasat_super_secret_key_2026';
+const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+
+console.log("Groq Key Loaded:", process.env.GROQ_API_KEY ? "YES (starts with " + process.env.GROQ_API_KEY.substring(0, 8) + ")" : "NO - KEY MISSING");
 
 // -----------------------------------------------------------------------------
 // Middleware & Body Parsers
@@ -97,45 +100,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'SIYASAT API Server is running.' });
 });
 
-// 1. User Registration Endpoint
-app.post('/api/auth/register', async (req, res) => {
-  const { full_name, email, password, role } = req.body;
-
-  if (!email || !password || !full_name) {
-    return res.status(400).json({ message: 'Full name, email, and password are required.' });
-  }
-
-  try {
-    // Check if user already exists
-    const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ message: 'User with this email already exists.' });
-    }
-
-    // Hash password
-    const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
-
-    // Default role validation
-    const userRole = ['STUDENT', 'ADVISER', 'ADMIN'].includes(role) ? role : 'STUDENT';
-
-    // Insert new user into PostgreSQL
-    const query = `
-      INSERT INTO users (full_name, email, password_hash, role, status)
-      VALUES ($1, $2, $3, $4, 'ACTIVE')
-      RETURNING id, full_name, email, role, status;
-    `;
-    const result = await pool.query(query, [full_name, email, passwordHash, userRole]);
-
-    res.status(201).json({
-      message: 'Account registered successfully.',
-      user: result.rows[0]
-    });
-  } catch (err) {
-    console.error('Registration Error:', err);
-    res.status(500).json({ message: 'Server error during registration: ' + err.message });
-  }
-});
+// Registration disabled - open public access, login reserved for advisers/admins.
 
 // 2. User Login with 5-Attempt Lockout
 app.post('/api/auth/login', async (req, res) => {
@@ -559,94 +524,242 @@ app.post('/api/theses/generate-pdf', (req, res) => {
 });
 
 // 6. AI Research Gap Analysis Tool Routes
-async function generateAiGaps({ title, abstract, department, keywords }) {
+async function generateAiGaps({ id, title, abstract, department, keywords }) {
   const deptName = department || 'Agricultural and Biosystems Engineering';
   const paperTitle = title || 'Research Study';
   const paperAbstract = abstract || '';
 
   const apiKey = process.env.GROQ_API_KEY;
-  if (apiKey && apiKey.startsWith('gsk_')) {
-    try {
-      const prompt = `You are an expert AI academic research reviewer in ${deptName}.
-Analyze the following thesis proposal/paper details:
+  if (!apiKey) {
+    throw new Error('GROQ_API_KEY is not configured.');
+  }
+
+  // Query PostgreSQL for 3-5 existing departmental theses to provide local context (if available)
+  let relatedDataset = [];
+  try {
+    const relatedRes = await pool.query(
+      'SELECT id, title, year, abstract, keywords FROM theses WHERE id != $1 ORDER BY created_at DESC LIMIT 5',
+      [id || -1]
+    );
+    relatedDataset = relatedRes.rows.map(t => ({
+      id: t.id,
+      title: t.title,
+      year: t.year,
+      abstract: t.abstract ? t.abstract.substring(0, 500) : '',
+      keywords: t.keywords
+    }));
+  } catch (err) {
+    console.error('Error fetching related theses:', err);
+  }
+
+  const prompt = `Act as a senior academic research advisor in ${deptName}.
+Analyze the given thesis abstract against department context to identify 2 to 3 substantive, high-impact research gaps.
+For each gap, output:
+- gap_title: Concise, technical gap heading.
+- description: Explicit breakdown of the unaddressed variable, methodological limitation, or parameter boundary.
+- search_query: A targeted 3-5 word academic search string tailored for scholarly literature indexes (e.g., "passive cooling root zone hydroponics").
+- local_citations: An array of 1-2 matching internal thesis objects { id, title, note } if relevant from the local set, or empty array if none closely apply.
+
+Current Paper:
 Title: ${paperTitle}
 Abstract: ${paperAbstract}
 Keywords: ${keywords || 'None'}
 
-Identify 4 specific, high-quality research gaps or unaddressed opportunities related to this work.
-Return strictly a valid JSON object with the key "gaps" containing an array of exactly 4 objects. Each object must have:
-"id": (number 1 to 4)
-"title": (string, concise title of the research gap)
-"desc": (string, detailed 2-3 sentence explanation of the gap and why further research is needed)
+Local Department Context (Recent Theses):
+${JSON.stringify(relatedDataset)}
 
+Return strictly a valid JSON object matching exactly this schema:
+{
+  "gaps": [
+    {
+      "gap_title": "String",
+      "description": "String",
+      "search_query": "String",
+      "local_citations": [
+        {
+          "id": 0,
+          "title": "String",
+          "note": "String"
+        }
+      ]
+    }
+  ]
+}
 Output JSON only, with no markdown code blocks or additional conversational text.`;
 
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.5,
-          max_tokens: 1000
-        })
-      });
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+      messages: [{ role: 'system', content: prompt }]
+    })
+  });
 
-      if (response.ok) {
-        const result = await response.json();
-        const content = result.choices?.[0]?.message?.content?.trim();
-        if (content) {
-          const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-          const parsed = JSON.parse(jsonStr);
-          if (parsed && Array.isArray(parsed.gaps) && parsed.gaps.length > 0) {
-            return parsed.gaps.map((g, idx) => ({
-              id: idx + 1,
-              title: g.title || `Research Gap ${idx + 1}`,
-              desc: g.desc || g.description || ''
-            }));
+  if (!response.ok) {
+    const errBody = await response.text();
+    throw new Error(`Groq API Error: ${errBody}`);
+  }
+
+  const result = await response.json();
+  const content = result.choices?.[0]?.message?.content?.trim();
+  if (!content) {
+    throw new Error('Groq API returned empty content.');
+  }
+
+  const parsed = JSON.parse(content);
+  if (parsed && Array.isArray(parsed.gaps) && parsed.gaps.length > 0) {
+    const enrichedGaps = await Promise.all(parsed.gaps.map(async (gap, i) => {
+      let online_references = [];
+      if (gap.search_query) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        try {
+          const searchUrl = `https://api.openalex.org/works?search=${encodeURIComponent(gap.search_query)}&filter=type:article,is_retracted:false&per_page=3&sort=relevance_score:desc`;
+          const searchRes = await fetch(searchUrl, {
+            headers: {
+              'User-Agent': 'SIYASAT-AcademicRepo/1.0 (mailto:admin@clsu.edu.ph)'
+            },
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            const items = searchData?.results || [];
+            online_references = items.map(item => ({
+              title: item.display_name || item.title || "Scholarly Publication",
+              authors: item.authorships?.slice(0, 3).map(a => a.author?.display_name).filter(Boolean).join(", ") || "Academic Researchers",
+              year: item.publication_year || "Recent",
+              journal: item.primary_location?.source?.display_name || "Peer-Reviewed Journal",
+              doi_url: item.doi || item.primary_location?.landing_page_url || item.open_access?.oa_url || null
+            })).filter(ref => ref.doi_url && ref.doi_url.startsWith('http'));
+          }
+        } catch (err) {
+          if (err.name === 'AbortError') {
+            console.error('OpenAlex Fetch timeout for query:', gap.search_query);
+          } else {
+            console.error('OpenAlex Fetch Error:', err);
           }
         }
       }
-    } catch (err) {
-      console.warn('Groq API call failed, falling back to dynamic gap generation:', err.message);
-    }
+      
+      return {
+        id: gap.id || i + 1,
+        title: gap.gap_title || gap.title || `Research Gap ${i + 1}`,
+        desc: gap.description || gap.desc || '',
+        search_query: gap.search_query || '',
+        cited_papers: gap.local_citations || gap.cited_papers || gap.supporting_papers || [],
+        online_references
+      };
+    }));
+    return enrichedGaps;
   }
 
-  const keywordsList = typeof keywords === 'string' ? keywords.split(',').map(k => k.trim()).filter(Boolean) : [];
-  const primaryTopic = keywordsList[0] || paperTitle.split(' ')[0] || 'the studied topic';
-
-  return [
-    {
-      id: 1,
-      title: `Limited long-term field validation for ${primaryTopic} under regional microclimates`,
-      desc: `While ${paperTitle} demonstrates short-term viability in ${deptName}, there is insufficient empirical data regarding multi-season stability and environmental degradation in diverse local field environments.`
-    },
-    {
-      id: 2,
-      title: `Lack of cost-benefit analysis and adoption metrics for smallholders`,
-      desc: `Existing research focuses primarily on technical parameters. Future studies should quantify capital expenditure, ROI timeline, and socio-economic adoption barriers for small-scale operations in ${deptName}.`
-    },
-    {
-      id: 3,
-      title: `Integration constraints with automated monitoring and IoT telemetry`,
-      desc: `The methodology described in "${paperTitle}" lacks real-time sensor integration and low-power telemetry protocols, limiting remote operational control and predictive maintenance.`
-    },
-    {
-      id: 4,
-      title: `Insufficient lifecycle assessment and scalable manufacturing benchmarks`,
-      desc: `Further investigation is required into the carbon footprint, raw material recycling options, and scalable fabrication methods suitable for local industrial production.`
-    }
-  ];
+  throw new Error('Groq API returned an invalid JSON schema.');
 }
 
 app.post('/api/analyze-gaps', async (req, res) => {
   try {
-    const { title, abstract, department, keywords } = req.body;
-    const gaps = await generateAiGaps({ title, abstract, department, keywords });
-    res.json({ success: true, message: 'AI Analysis complete', gaps });
+    const { id, title, abstract, department, keywords } = req.body;
+    const gaps = await generateAiGaps({ id, title, abstract, department, keywords });
+    res.json({ success: true, message: 'Hybrid AI Research Gap Analysis complete', gaps });
+  } catch (err) {
+    console.error('AI Analysis Error:', err);
+    res.status(500).json({ success: false, message: 'Failed to generate AI Research Gap Report.' });
+  }
+});
+
+app.post('/api/analyze-global-gaps', async (req, res) => {
+  try {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ success: false, message: 'GROQ_API_KEY is not configured.' });
+    }
+
+    const thesesRes = await pool.query('SELECT id, title, year, abstract, keywords FROM theses ORDER BY created_at DESC LIMIT 30');
+    if (thesesRes.rows.length === 0) {
+      return res.status(400).json({ success: false, message: 'Not enough data in the repository for analysis.' });
+    }
+
+    // Process and truncate abstracts to 650 chars max to fit token limits
+    const dataset = thesesRes.rows.map(t => ({
+      id: t.id,
+      title: t.title,
+      year: t.year,
+      abstract: t.abstract ? t.abstract.substring(0, 650) : '',
+      keywords: t.keywords
+    }));
+
+    const systemPrompt = `You are an expert academic research analyst. Synthesize 3 to 5 clear research gaps across the provided dataset. 
+Enforce citation coverage: Across all identified gaps, you must cite a total of at least 20 unique papers from the provided set. 
+Restrict your analysis strictly to the provided internal records (air-gapped RAG). Do not use external internet browsing or prior knowledge.
+
+Return valid JSON exactly matching this schema:
+{
+  "analyzed_count": <number_of_papers_analyzed>,
+  "domain_summary": "<High-level summary of analyzed research themes>",
+  "gaps": [
+    {
+      "gap_title": "<Title of the identified gap>",
+      "description": "<Comprehensive explanation of what is underexplored or missing>",
+      "supporting_papers": [
+        {
+          "id": <paper_id>,
+          "title": "<Exact Thesis Title>",
+          "year": <paper_year>,
+          "note": "<Brief explanation of how this study reveals or relates to the gap>"
+        }
+      ]
+    }
+  ]
+}
+
+Dataset:
+${JSON.stringify(dataset)}
+`;
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [{ role: 'system', content: systemPrompt }]
+      })
+    });
+
+    if (!response.ok) {
+      const errBody = await response.text();
+      console.error('Groq API Error:', errBody);
+      throw new Error(`Groq API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    const resultJson = JSON.parse(data.choices[0].message.content);
+
+    res.json({ success: true, message: 'Global AI Analysis complete', result: resultJson });
+  } catch (err) {
+    console.error('Global AI Analysis Error:', err);
+    res.status(500).json({ success: false, message: 'Failed to generate global AI Research Gap Report.' });
+  }
+});
+
+app.post('/api/analyze-single-gap', async (req, res) => {
+  try {
+    const { id, title, abstract, department, keywords } = req.body;
+    const gaps = await generateAiGaps({ id, title, abstract, department, keywords });
+    res.json({ success: true, message: 'Hybrid AI Research Gap Analysis complete', gaps });
   } catch (err) {
     console.error('AI Analysis Error:', err);
     res.status(500).json({ success: false, message: 'Failed to generate AI Research Gap Report.' });

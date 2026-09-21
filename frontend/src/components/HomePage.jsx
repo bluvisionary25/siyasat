@@ -216,10 +216,11 @@ const UploadForm = ({ onUploadSuccess }) => {
  */
 const HomePage = ({
   userRole: propUserRole,
-  currentUser,
+  currentUser = null,
   onNavigate,
   onLoginClick,
   onOpenAuth,
+  onLoginSuccess,
   onLogout,
   thesesList = [],
   onSelectPaper,
@@ -227,10 +228,10 @@ const HomePage = ({
 }) => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  // Normalize role
+  // Normalize role - strict unauthenticated guest default
   const effectiveRole = (propUserRole || currentUser?.role || '').toUpperCase();
   const isElevated = effectiveRole === 'ADVISER' || effectiveRole === 'ADMIN';
-  const showLoginBtn = !effectiveRole || effectiveRole === 'STUDENT';
+  const showLoginBtn = !effectiveRole;
 
   const handleOpenAuth = () => {
     if (onLoginClick) {
@@ -340,11 +341,9 @@ const HomePage = ({
 
         {/* HERO CONTENT */}
         <div className="max-w-4xl mx-auto text-center relative z-10 px-6 pt-4 pb-12 space-y-6">
-          {/* SIYASAT LOGO IN HERO */}
+          {/* SIYASAT LOGO IN HERO - Rendered cleanly without border/box wrapper */}
           <div className="flex justify-center mb-4">
-            <div className="border-4 border-white/90 px-8 py-3.5 rounded-2xl backdrop-blur-sm shadow-xl inline-flex items-center justify-center bg-white/5">
-              <SiyasatLogo variant="white" size="xl" />
-            </div>
+            <SiyasatLogo variant="white" size="xl" />
           </div>
 
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[42px] font-extrabold tracking-tight leading-tight max-w-3xl mx-auto font-sans drop-shadow-sm text-white">
@@ -603,8 +602,17 @@ const HomePage = ({
       <AuthModal
         isOpen={isAuthOpen}
         onClose={handleAuthClose}
-        onLoginSuccess={() => {
+        onLoginSuccess={(arg1, arg2) => {
           setIsAuthOpen(false);
+          if (onLoginSuccess) {
+            onLoginSuccess(arg1, arg2);
+          } else {
+            const token = typeof arg1 === 'string' ? arg1 : arg2;
+            const user = typeof arg1 === 'object' ? arg1 : arg2;
+            if (token) localStorage.setItem('siyasat_token', token);
+            if (user) localStorage.setItem('siyasat_user', JSON.stringify(user));
+            window.location.reload();
+          }
           if (onNavigate) onNavigate('home');
         }}
         API_BASE="http://localhost:5000/api"
