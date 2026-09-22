@@ -424,11 +424,6 @@ siyasat/
 │
 ├── README.md                            # This file
 ├── .gitignore                           # Root-level gitignore
-├── CLASS_DIAGRAM.md                     # System class diagram (Mermaid)
-├── SIYASAT_10_Sprint_Product_Backlog.docx  # Defense deliverable: Sprint backlog
-├── SIYASAT_System_Summary_Defense.docx    # Defense deliverable: Architecture briefing
-├── generate_backlog.js                  # Backlog document generator script
-└── generate_defense_doc.js              # Defense document generator script
 ```
 
 ---
