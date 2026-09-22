@@ -1,7 +1,7 @@
 import React from 'react';
 import Navbar from './Navbar';
 
-const AboutUsPage = ({ onNavigate, currentUser }) => {
+const AboutUsPage = ({ onNavigate, currentUser, onLoginClick }) => {
   return (
     <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] font-sans relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
       
@@ -10,6 +10,7 @@ const AboutUsPage = ({ onNavigate, currentUser }) => {
         activePage="about" 
         onNavigate={onNavigate} 
         currentUser={currentUser} 
+        onLoginClick={onLoginClick}
       />
 
       {/* MAIN CONTENT CONTAINER */}

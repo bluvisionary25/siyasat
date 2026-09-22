@@ -54,14 +54,45 @@ const getValidSessionUser = () => {
   }
 };
 
+// Helper to determine initial route and search params from browser URL
+const getInitialRoute = () => {
+  try {
+    const pathname = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q') || params.get('search') || params.get('keyword') || '';
+    const pageParam = params.get('page')?.toLowerCase();
+    const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+
+    let page = pageParam || pathname || hash || 'home';
+    if (page === 'repo') page = 'repository';
+    if (page === 'about-us' || page === 'aboutus') page = 'about';
+    if (page === 'paper' || page === 'details') page = 'paper-details';
+    if (page === 'accounts') page = 'users';
+
+    const validPages = ['home', 'repository', 'about', 'paper-details', 'upload', 'users', 'profile', 'login'];
+    const resolvedPage = validPages.includes(page) ? page : 'home';
+
+    return {
+      page: resolvedPage,
+      search: q ? decodeURIComponent(q).trim() : ''
+    };
+  } catch (e) {
+    console.error('Error determining initial route:', e);
+    return { page: 'home', search: '' };
+  }
+};
+
 export default function App() {
   // Public/unauthenticated users strictly load as guests (null).
   // Only restore ADMIN or ADVISER view if a valid session exists in localStorage.
   const [currentUser, setCurrentUser] = useState(() => getValidSessionUser());
 
-  const [currentPage, setCurrentPage] = useState('home');
+  const initialRoute = getInitialRoute();
+  const [currentPage, setCurrentPage] = useState(() => initialRoute.page === 'login' ? 'home' : initialRoute.page);
+  const [repositorySearchQuery, setRepositorySearchQuery] = useState(() => initialRoute.search);
+  const [pendingDestination, setPendingDestination] = useState(null);
   const [selectedPaper, setSelectedPaper] = useState(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(() => initialRoute.page === 'login');
   const [theses, setTheses] = useState([]);
   const [usersList, setUsersList] = useState([]);
 
@@ -72,6 +103,22 @@ export default function App() {
       fetchUsers();
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const route = getInitialRoute();
+      if (route.page === 'login') {
+        setShowAuthModal(true);
+      } else {
+        setCurrentPage(route.page);
+      }
+      if (route.search) {
+        setRepositorySearchQuery(route.search);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Data Fetching
@@ -133,6 +180,12 @@ export default function App() {
     if (userData?.role === 'ADMIN') {
       fetchUsers();
     }
+
+    if (pendingDestination) {
+      const dest = pendingDestination;
+      setPendingDestination(null);
+      handleNavigate(dest);
+    }
   };
 
   const handleLogout = () => {
@@ -145,16 +198,23 @@ export default function App() {
   // ---------------------------------------------------------------------------
   // Navigation — always sets selectedPaper atomically before page switch
   // ---------------------------------------------------------------------------
-  const handleNavigate = (page, paperData = null) => {
+  const handleNavigate = (page, extraData = null) => {
     const targetPage = page ? String(page).trim() : 'home';
 
     // Atomically update paper context before switching pages
-    if (paperData !== null && paperData !== undefined) {
-      setSelectedPaper(paperData);
+    if (extraData !== null && extraData !== undefined) {
+      if (typeof extraData === 'object' && (extraData.title || extraData.abstract)) {
+        setSelectedPaper(extraData);
+      } else if (typeof extraData === 'object' && extraData.searchQuery !== undefined) {
+        setRepositorySearchQuery(extraData.searchQuery || '');
+      } else if (typeof extraData === 'string' && targetPage === 'repository') {
+        setRepositorySearchQuery(extraData);
+      }
     }
 
     if (targetPage === 'upload') {
       if (!currentUser) {
+        setPendingDestination('upload');
         setShowAuthModal(true);
         return;
       }
@@ -165,8 +225,9 @@ export default function App() {
       }
     }
 
-    if (targetPage === 'users') {
+    if (targetPage === 'users' || targetPage === 'accounts') {
       if (!currentUser) {
+        setPendingDestination('users');
         setShowAuthModal(true);
         return;
       }
@@ -183,6 +244,7 @@ export default function App() {
       targetPage === 'edit'
     ) {
       if (!currentUser) {
+        setPendingDestination(targetPage);
         setShowAuthModal(true);
         return;
       }
@@ -191,6 +253,24 @@ export default function App() {
         alert('Access denied. Only Administrators or Advisers can edit papers.');
         return;
       }
+    }
+
+    if (targetPage === 'profile' && !currentUser) {
+      setPendingDestination('profile');
+      setShowAuthModal(true);
+      return;
+    }
+
+    // Sync browser URL cleanly
+    try {
+      const urlPath = targetPage === 'home' ? '/' : `/${targetPage}`;
+      const queryToEncode = typeof extraData === 'object' && extraData?.searchQuery !== undefined
+        ? extraData.searchQuery
+        : (typeof extraData === 'string' && targetPage === 'repository' ? extraData : (targetPage === 'repository' ? repositorySearchQuery : ''));
+      const searchSuffix = targetPage === 'repository' && queryToEncode ? `?search=${encodeURIComponent(queryToEncode)}` : '';
+      window.history.pushState(null, '', `${urlPath}${searchSuffix}`);
+    } catch (err) {
+      console.warn('URL pushState failed:', err);
     }
 
     setCurrentPage(targetPage);
@@ -328,6 +408,8 @@ export default function App() {
           onSelectPaper={(paper) => setSelectedPaper(paper)}
           onDeletePaper={handleDeletePaper}
           onLogout={handleLogout}
+          onLoginClick={() => setShowAuthModal(true)}
+          initialSearchQuery={repositorySearchQuery}
         />
       )}
 
@@ -339,6 +421,7 @@ export default function App() {
           currentUser={currentUser}
           onDeletePaper={handleDeletePaper}
           onLogout={handleLogout}
+          onLoginClick={() => setShowAuthModal(true)}
         />
       )}
 
@@ -397,6 +480,7 @@ export default function App() {
         <AboutUsPage
           onNavigate={handleNavigate}
           currentUser={currentUser}
+          onLoginClick={() => setShowAuthModal(true)}
         />
       )}
 

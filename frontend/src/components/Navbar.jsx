@@ -142,10 +142,14 @@ const Navbar = ({
         {currentUser ? (
           <button
             onClick={() => handleNav('profile')}
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#E59819] text-[#7A0C0E] font-bold text-sm sm:text-base flex items-center justify-center shadow-md border-2 border-white/80 cursor-pointer hover:scale-105 transition-all"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#E59819] text-[#7A0C0E] font-bold text-sm sm:text-base flex items-center justify-center shadow-md border-2 border-white/80 cursor-pointer hover:scale-105 transition-all overflow-hidden"
             title={currentUser.full_name || currentUser.email}
           >
-            {getInitial()}
+            {currentUser.profile_image ? (
+              <img src={`http://localhost:5000/${currentUser.profile_image}`} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              getInitial()
+            )}
           </button>
         ) : (
           <button

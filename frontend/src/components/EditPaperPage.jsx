@@ -18,7 +18,7 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
     title: '',
     author: '',
     year: new Date().getFullYear(),
-    branch: 'AB Land and Water Resources Engineering',
+    branch: 'Land and Water Resources Engineering',
     keywords: '',
     abstract: ''
   });
@@ -32,9 +32,9 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
       setFormData({
         title: paper.title || '',
         author: paper.author || paper.authors || '',
-        year: paper.year || new Date().getFullYear(),
-        branch: paper.department || paper.branch || 'AB Land and Water Resources Engineering',
-        keywords: paper.keywords || '',
+        year: paper.dateAccepted || paper.year || new Date().getFullYear(),
+        department: paper.department || paper.branch || 'Land and Water Resources Engineering',
+        keywords: Array.isArray(paper.keywords) ? paper.keywords.join(', ') : (paper.keywords || ''),
         abstract: paper.abstract || ''
       });
     }
@@ -71,7 +71,7 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
     updateData.append('title', formData.title || '');
     updateData.append('author', formData.author || '');
     updateData.append('year', formData.year || '');
-    updateData.append('department', formData.branch || '');
+    updateData.append('department', formData.department || '');
     updateData.append('keywords', formData.keywords || '');
     updateData.append('abstract', formData.abstract || '');
 
@@ -89,12 +89,17 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
       if (res.ok) {
         if (onSaveEdit) await onSaveEdit();
         setShowSuccessModal(true);
+        setTimeout(() => {
+          setShowSuccessModal(false);
+          if (onNavigate) onNavigate('repository');
+        }, 1500);
       } else {
-        const errJson = await res.json();
+        const errJson = await res.json().catch(() => ({}));
+        console.error('Server error response:', errJson);
         alert(`Failed to save edits: ${errJson.message || 'Database update failed'}`);
       }
     } catch (err) {
-      console.error('Edit error:', err);
+      console.error('Edit error:', err.response?.data || err);
       alert('Network error connecting to backend server.');
     } finally {
       setIsSubmitting(false);
@@ -180,14 +185,15 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <select
-                value={formData.branch}
-                onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
+                value={formData.department}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-lg border border-[#800000]/60 text-[#800000] focus:outline-none text-xs font-semibold bg-transparent"
               >
-                <option value="AB Machinery and Power Engineering">AB Machinery and Power Engineering</option>
-                <option value="AB Land and Water Resources Engineering">AB Land and Water Resources Engineering</option>
-                <option value="AB Structures and Environment Engineering">AB Structures and Environment Engineering</option>
-                <option value="AB Process Engineering">AB Process Engineering</option>
+                <option value="Land and Water Resources Engineering">Land and Water Resources Engineering</option>
+                <option value="Farm Power and Machinery Engineering">Farm Power and Machinery Engineering</option>
+                <option value="Agricultural Structures and Environmental Control Engineering">Agricultural Structures and Environmental Control Engineering</option>
+                <option value="Agricultural and Biosystems Processing Engineering (Post-Harvest)">Agricultural and Biosystems Processing Engineering (Post-Harvest)</option>
+                <option value="Agricultural Informatics and Automation">Agricultural Informatics and Automation</option>
               </select>
 
               <input

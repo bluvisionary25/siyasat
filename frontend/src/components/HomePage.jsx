@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Building2, Sprout, GraduationCap, Award, Upload, CheckCircle2 } from 'lucide-react';
+import { Search, Building2, Sprout, GraduationCap, Award, Upload, CheckCircle2, ChevronDown } from 'lucide-react';
 import Navbar from './Navbar';
 import AuthModal from './AuthModal';
 import SiyasatLogo from './SiyasatLogo';
@@ -108,20 +108,26 @@ const UploadForm = ({ onUploadSuccess }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="relative">
-              <input
-                type="text"
+              <select
                 id="upload-branch"
                 value={formData.branch}
                 onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                placeholder=" "
-                className="peer w-full px-4 py-3.5 rounded-xl border border-gray-300 text-gray-900 focus:outline-none focus:border-[#7A0C0E] focus:ring-1 focus:ring-[#7A0C0E] text-xs font-semibold bg-white"
-              />
+                className="peer w-full px-4 py-3.5 rounded-xl border border-gray-300 text-gray-900 focus:outline-none focus:border-[#7A0C0E] focus:ring-1 focus:ring-[#7A0C0E] text-xs font-semibold bg-white appearance-none cursor-pointer"
+              >
+                <option value="" disabled hidden></option>
+                <option value="Land and Water Resources Engineering">Land and Water Resources Engineering</option>
+                <option value="Farm Power and Machinery Engineering">Farm Power and Machinery Engineering</option>
+                <option value="Agricultural Structures and Environmental Control Engineering">Agricultural Structures and Environmental Control Engineering</option>
+                <option value="Agricultural and Biosystems Processing Engineering (Post-Harvest)">Agricultural and Biosystems Processing Engineering (Post-Harvest)</option>
+                <option value="Agricultural Informatics and Automation">Agricultural Informatics and Automation</option>
+              </select>
               <label
                 htmlFor="upload-branch"
-                className="absolute left-3 -top-2.5 bg-white px-2 text-xs font-bold text-[#7A0C0E] rounded transition-all"
+                className="absolute left-3 -top-2.5 bg-white px-2 text-xs font-bold text-[#7A0C0E] rounded transition-all pointer-events-none"
               >
                 Branch
               </label>
+              <ChevronDown className="w-4 h-4 text-gray-500 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" />
             </div>
 
             <div className="relative">
@@ -227,6 +233,7 @@ const HomePage = ({
   onUploadSubmit
 }) => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
 
   // Normalize role - strict unauthenticated guest default
   const effectiveRole = (propUserRole || currentUser?.role || '').toUpperCase();
@@ -245,6 +252,21 @@ const HomePage = ({
 
   const handleAuthClose = () => {
     setIsAuthOpen(false);
+  };
+
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    const trimmed = searchKeyword.trim();
+    try {
+      if (trimmed) {
+        window.history.pushState(null, '', `?search=${encodeURIComponent(trimmed)}`);
+      }
+    } catch (err) {
+      console.warn('History pushState error:', err);
+    }
+    if (onNavigate) {
+      onNavigate('repository', { searchQuery: trimmed });
+    }
   };
 
   // 4 Department Pillars (Foundation, Mission, Curriculum, Legacy)
@@ -307,9 +329,33 @@ const HomePage = ({
     }
   ];
 
-  const displayedTheses = (Array.isArray(thesesList) && thesesList.length > 0)
-    ? thesesList.slice(0, 4)
-    : defaultPapers;
+  const allTheses = (Array.isArray(thesesList) && thesesList.length > 0) ? thesesList : defaultPapers;
+  
+  let filteredTheses = allTheses;
+  const rawQ = searchKeyword.trim().toLowerCase();
+  if (rawQ) {
+    filteredTheses = allTheses.filter(p => {
+      const titleStr = (p.title || '').toLowerCase();
+      const abstractStr = (p.abstract || '').toLowerCase();
+      const keywordsStr = (Array.isArray(p.keywords) ? p.keywords.join(' ') : (p.keywords || '')).toLowerCase();
+
+      const directMatch =
+        titleStr.includes(rawQ) ||
+        abstractStr.includes(rawQ) ||
+        keywordsStr.includes(rawQ);
+
+      if (directMatch) return true;
+
+      const tokens = rawQ.replace(/[,;|]/g, ' ').split(/\s+/).filter(t => t.length > 0);
+      if (tokens.length > 0) {
+        const combinedText = `${titleStr} ${abstractStr} ${keywordsStr}`;
+        return tokens.every(token => combinedText.includes(token));
+      }
+      return false;
+    });
+  }
+
+  const displayedTheses = filteredTheses.slice(0, 4);
 
   return (
     <div
@@ -341,10 +387,7 @@ const HomePage = ({
 
         {/* HERO CONTENT */}
         <div className="max-w-4xl mx-auto text-center relative z-10 px-6 pt-4 pb-12 space-y-6">
-          {/* SIYASAT LOGO IN HERO - Rendered cleanly without border/box wrapper */}
-          <div className="flex justify-center mb-4">
-            <SiyasatLogo variant="white" size="xl" />
-          </div>
+
 
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[42px] font-extrabold tracking-tight leading-tight max-w-3xl mx-auto font-sans drop-shadow-sm text-white">
             A Research and Thesis Repository with AI Gap Analysis Tool
@@ -451,14 +494,23 @@ const HomePage = ({
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold font-sans tracking-tight">
                 Research and Thesis Repository
               </h2>
-              <div className="relative max-w-lg mx-auto">
+              <form onSubmit={handleSearchSubmit} className="relative max-w-lg mx-auto">
                 <input
                   type="text"
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
                   placeholder="Search some keywords..."
-                  className="w-full bg-[#5E090B]/90 text-white placeholder-white/60 border border-white/20 rounded-full py-3 pl-11 pr-6 text-xs focus:outline-none focus:border-[#E59819] focus:ring-1 focus:ring-[#E59819] transition-all shadow-inner"
+                  className="w-full bg-[#5E090B]/90 text-white placeholder-white/60 border border-white/20 rounded-full py-3 pl-11 pr-12 text-xs focus:outline-none focus:border-[#E59819] focus:ring-1 focus:ring-[#E59819] transition-all shadow-inner"
                 />
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/70" />
-              </div>
+                <button
+                  type="submit"
+                  aria-label="Search"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white cursor-pointer transition-colors"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/70 pointer-events-none" />
+              </form>
             </div>
 
             {/* 4 Featured Research Cards */}
@@ -533,7 +585,7 @@ const HomePage = ({
       </div>
 
       {/* ------------------ 4. CONDITIONAL UPLOAD FORM (ADVISER & ADMIN ONLY) ------------------ */}
-      {isElevated && <UploadForm onUploadSuccess={onUploadSubmit} />}
+      {/* Upload Form removed from Home Page as per requirements. Users should use /upload route. */}
 
       {/* ------------------ 5. MULTI-COLUMN FOOTER WITH WATERMARK ------------------ */}
       <footer className="relative overflow-hidden pt-20 pb-0 px-6 md:px-12 bg-gradient-to-b from-[#F7EBEB]/90 via-[#E4A5A5]/80 to-[#A73739]">

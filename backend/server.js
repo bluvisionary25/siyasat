@@ -42,11 +42,21 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
 });
 
-pool.connect((err, client, release) => {
+pool.connect(async (err, client, release) => {
   if (err) {
     console.error('❌ Database Connection Error:', err.stack);
   } else {
     console.log('✅ Connected to PostgreSQL Database: siyasat_db');
+    try {
+      await client.query(`ALTER TABLE theses ADD COLUMN IF NOT EXISTS cluster_group VARCHAR(120) DEFAULT 'Independent Studies';`);
+      await client.query(`ALTER TABLE theses ADD COLUMN IF NOT EXISTS similarity_score INT DEFAULT 0;`);
+      await client.query(`ALTER TABLE theses ADD COLUMN IF NOT EXISTS matched_thesis_id INT DEFAULT NULL;`);
+      await client.query(`ALTER TABLE theses ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
+      await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image TEXT;`);
+      console.log('✅ Verified/Updated DB schema for clustering and timestamp columns.');
+    } catch (dbErr) {
+      console.error('❌ Error updating schema for clustering/timestamp columns:', dbErr);
+    }
     release();
   }
 });
@@ -71,6 +81,18 @@ const upload = multer({
       cb(null, true);
     } else {
       cb(new Error('Only PDF files are allowed!'), false);
+    }
+  }
+});
+
+const imageUpload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB Limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
     }
   }
 });
@@ -172,7 +194,8 @@ app.post('/api/auth/login', async (req, res) => {
         full_name: user.full_name,
         email: user.email,
         role: user.role,
-        status: user.status
+        status: user.status,
+        profile_image: user.profile_image
       }
     });
   } catch (err) {
@@ -181,9 +204,30 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// 2.1 Profile Picture Upload
+app.post('/api/users/profile-picture', authenticateToken, imageUpload.single('profile_image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image uploaded' });
+    }
+    const normalizedPath = req.file.path.replace(/\\/g, '/');
+    const updateRes = await pool.query(
+      'UPDATE users SET profile_image = $1 WHERE id = $2 RETURNING id, full_name, email, role, profile_image',
+      [normalizedPath, req.user.id]
+    );
+    if (updateRes.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    res.json({ message: 'Profile picture updated', user: updateRes.rows[0] });
+  } catch (err) {
+    console.error('Profile Picture Upload Error:', err);
+    res.status(500).json({ message: 'Failed to upload profile picture' });
+  }
+});
+
 // 3. Fetch Theses with Multi-Criteria Search & Filters (Publicly Accessible)
 app.get('/api/theses', async (req, res) => {
-  const { q, year, sort } = req.query;
+  const { q, year, sort, uploaded_by } = req.query;
 
   try {
     let queryStr = 'SELECT * FROM theses WHERE 1=1';
@@ -197,6 +241,11 @@ app.get('/api/theses', async (req, res) => {
     if (year) {
       params.push(parseInt(year, 10));
       queryStr += ` AND year = $${params.length}`;
+    }
+
+    if (uploaded_by) {
+      params.push(parseInt(uploaded_by, 10));
+      queryStr += ` AND uploaded_by = $${params.length}`;
     }
 
     if (sort === 'year_desc') {
@@ -312,6 +361,105 @@ async function checkForDuplicateThesis(title = '', abstract = '') {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Autonomous Similarity Decision Engine
+// -----------------------------------------------------------------------------
+const ACADEMIC_STOPWORDS = new Set([
+  'the', 'and', 'of', 'in', 'to', 'a', 'is', 'for', 'with', 'on', 'by', 'an', 
+  'study', 'research', 'analysis', 'effect', 'using', 'based', 'from', 'as', 
+  'at', 'this', 'that', 'which', 'evaluation', 'development', 'performance',
+  'design'
+]);
+
+function getCleanTokens(text) {
+  const tokens = String(text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !ACADEMIC_STOPWORDS.has(w))
+    .map(w => {
+      const stemmed = w.replace(/(ing|ed|ion|s|es|or|ator|ated|ation|er|ive|al|e)$/, '');
+      return stemmed.length >= 3 ? stemmed : w;
+    });
+  return new Set(tokens);
+}
+
+function computeSimilarityAndCluster(targetThesis, allTheses) {
+  console.log(`[Similarity Engine] Scanning Thesis #${targetThesis.id || 'NEW'} - Fields: Title, Abstract, Keywords`);
+  const targetTitle = getCleanTokens(targetThesis.title);
+  const targetAbstract = getCleanTokens(targetThesis.abstract);
+  const targetKeywords = getCleanTokens(targetThesis.keywords);
+  
+  let highestSim = 0;
+  let matchedThesis = null;
+
+  for (const thesis of allTheses) {
+    if (targetThesis.id && String(thesis.id) === String(targetThesis.id)) continue;
+    
+    const compTitle = getCleanTokens(thesis.title);
+    const compAbstract = getCleanTokens(thesis.abstract);
+    const compKeywords = getCleanTokens(thesis.keywords);
+    
+    const calcWeightedOverlap = (set1, set2, weight) => {
+      let inter = 0;
+      for (const w of set1) if (set2.has(w)) inter += weight;
+      return inter;
+    };
+    
+    const titleInter = calcWeightedOverlap(targetTitle, compTitle, 1.5);
+    const abstractInter = calcWeightedOverlap(targetAbstract, compAbstract, 1.0);
+    const keywordInter = calcWeightedOverlap(targetKeywords, compKeywords, 1.5);
+    
+    const intersectionScore = titleInter + abstractInter + keywordInter;
+    
+    const targetWeight = (targetTitle.size * 1.5) + (targetAbstract.size * 1.0) + (targetKeywords.size * 1.5);
+    const compWeight = (compTitle.size * 1.5) + (compAbstract.size * 1.0) + (compKeywords.size * 1.5);
+    const minWeight = Math.min(targetWeight, compWeight);
+    
+    let similarity_percentage = 0;
+    if (minWeight > 0) {
+      similarity_percentage = Math.min(100, Math.round((intersectionScore / minWeight) * 100));
+    }
+    
+    if (similarity_percentage > highestSim) {
+      highestSim = similarity_percentage;
+      matchedThesis = thesis;
+    }
+  }
+
+  if (highestSim >= 50 && matchedThesis && matchedThesis.cluster_group) {
+    return {
+      cluster_group: matchedThesis.cluster_group,
+      similarity_score: highestSim,
+      matched_thesis_id: matchedThesis.id
+    };
+  } else {
+    let newFolderName = "Independent Studies";
+    if (targetThesis.keywords) {
+      const keywordsList = targetThesis.keywords.split(',').map(k => k.trim()).filter(k => k);
+      if (keywordsList.length > 0) {
+        newFolderName = keywordsList[0];
+        newFolderName = newFolderName.replace(/\b\w/g, c => c.toUpperCase());
+        if (!newFolderName.toLowerCase().includes("studies") && !newFolderName.toLowerCase().includes("domain")) {
+          newFolderName += " Domain";
+        }
+      }
+    } else {
+      const titleTokens = Array.from(targetTitle).slice(0, 3);
+      if (titleTokens.length > 0) {
+        newFolderName = titleTokens.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') + " Domain";
+      }
+    }
+    
+    return {
+      cluster_group: newFolderName,
+      similarity_score: 100,
+      matched_thesis_id: null
+    };
+  }
+}
+
+
 // Duplication Check API Endpoint
 app.post('/api/theses/check-duplicate', async (req, res) => {
   try {
@@ -355,9 +503,12 @@ app.post('/api/theses', authenticateToken, upload.single('file'), async (req, re
 
     const normalizedPath = req.file.path.replace(/\\/g, '/');
 
+    const existingRes = await pool.query('SELECT * FROM theses');
+    const clusterResult = computeSimilarityAndCluster({ title, abstract, keywords }, existingRes.rows);
+
     const query = `
-      INSERT INTO theses (title, abstract, author, year, keywords, department, file_path, uploaded_by)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO theses (title, abstract, author, year, keywords, department, file_path, uploaded_by, cluster_group, similarity_score, matched_thesis_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *;
     `;
     const values = [
@@ -368,7 +519,10 @@ app.post('/api/theses', authenticateToken, upload.single('file'), async (req, re
       keywords || '',
       department || 'Department of Agricultural and Biosystems Engineering',
       normalizedPath,
-      req.user.id
+      req.user.id,
+      clusterResult.cluster_group,
+      clusterResult.similarity_score,
+      clusterResult.matched_thesis_id
     ];
 
     const result = await pool.query(query, values);
@@ -376,6 +530,111 @@ app.post('/api/theses', authenticateToken, upload.single('file'), async (req, re
   } catch (err) {
     console.error('Upload Error:', err);
     res.status(500).json({ message: 'Internal server error during upload: ' + err.message });
+  }
+});
+
+// 4.1 Update Thesis Route
+app.put('/api/theses/:id', authenticateToken, upload.single('file'), async (req, res) => {
+  try {
+    const { title, author, year, keywords, abstract, department } = req.body;
+    
+    // Auto re-run evaluation if title or abstract changes
+    const existingRes = await pool.query('SELECT * FROM theses');
+    const clusterResult = computeSimilarityAndCluster({ 
+      id: req.params.id, 
+      title: title || '', 
+      abstract: abstract || '', 
+      keywords: keywords || '' 
+    }, existingRes.rows);
+
+    let query = `
+      UPDATE theses
+      SET title = $1, author = $2, year = $3, keywords = $4, abstract = $5, department = $6, 
+          cluster_group = $7, similarity_score = $8, matched_thesis_id = $9
+    `;
+    
+    const values = [
+      title, author, parseInt(year, 10), keywords || '', abstract, department,
+      clusterResult.cluster_group, clusterResult.similarity_score, clusterResult.matched_thesis_id
+    ];
+
+    if (req.file) {
+      const normalizedPath = req.file.path.replace(/\\/g, '/');
+      query += `, file_path = $10 WHERE id = $11 RETURNING *;`;
+      values.push(normalizedPath, req.params.id);
+    } else {
+      query += ` WHERE id = $10 RETURNING *;`;
+      values.push(req.params.id);
+    }
+
+    const result = await pool.query(query, values);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Thesis not found.' });
+    }
+    res.json({ message: 'Thesis updated successfully.', thesis: result.rows[0] });
+  } catch (err) {
+    console.error('Update Error:', err);
+    res.status(500).json({ message: 'Internal server error during update.' });
+  }
+});
+
+// 4.1.5 Delete Thesis Route
+app.delete('/api/theses/:id', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Access denied. Administrator privileges required.' });
+    }
+    const result = await pool.query('DELETE FROM theses WHERE id = $1 RETURNING *', [req.params.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Thesis not found.' });
+    }
+    
+    // Attempt to delete associated file
+    if (result.rows[0].file_path) {
+      const fs = require('fs');
+      if (fs.existsSync(result.rows[0].file_path)) {
+        try {
+          fs.unlinkSync(result.rows[0].file_path);
+        } catch (fileErr) {
+          console.error('Failed to delete associated PDF file:', fileErr);
+        }
+      }
+    }
+
+    res.json({ message: 'Thesis deleted successfully.' });
+  } catch (err) {
+    console.error('Delete Error:', err);
+    res.status(500).json({ message: 'Internal server error during deletion.' });
+  }
+});
+
+// 4.2 Recluster All Route
+app.post('/api/theses/recluster-all', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ message: 'Access denied. Administrator privileges required.' });
+  }
+  try {
+    const existingRes = await pool.query('SELECT * FROM theses ORDER BY created_at ASC');
+    let thesesList = existingRes.rows;
+    let updatedCount = 0;
+    const currentClustered = [];
+
+    for (const thesis of thesesList) {
+      const clusterResult = computeSimilarityAndCluster(thesis, currentClustered);
+      const newThesisData = { ...thesis, ...clusterResult };
+      currentClustered.push(newThesisData);
+
+      await pool.query(
+        'UPDATE theses SET cluster_group = $1, similarity_score = $2, matched_thesis_id = $3 WHERE id = $4',
+        [clusterResult.cluster_group, clusterResult.similarity_score, clusterResult.matched_thesis_id, thesis.id]
+      );
+      updatedCount++;
+    }
+
+    res.json({ message: `Successfully reclustered ${updatedCount} theses.` });
+  } catch (err) {
+    console.error('Recluster Error:', err);
+    res.status(500).json({ message: 'Internal server error during reclustering.' });
   }
 });
 
@@ -757,6 +1016,19 @@ ${JSON.stringify(dataset)}
 
 app.post('/api/analyze-single-gap', async (req, res) => {
   try {
+    const authHeader = req.headers['authorization'];
+    if (authHeader) {
+      const token = authHeader.split(' ')[1];
+      if (token) {
+        try {
+          const user = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_key');
+          if (user && user.role === 'ADMIN') {
+            return res.status(403).json({ success: false, message: 'AI Analysis feature is not available for Administrator accounts.' });
+          }
+        } catch (e) {}
+      }
+    }
+
     const { id, title, abstract, department, keywords } = req.body;
     const gaps = await generateAiGaps({ id, title, abstract, department, keywords });
     res.json({ success: true, message: 'Hybrid AI Research Gap Analysis complete', gaps });
@@ -768,6 +1040,10 @@ app.post('/api/analyze-single-gap', async (req, res) => {
 
 app.post('/api/theses/:id/analyze-gap', authenticateToken, async (req, res) => {
   try {
+    if (req.user && req.user.role === 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'AI Analysis feature is not available for Administrator accounts.' });
+    }
+
     const thesisRes = await pool.query('SELECT * FROM theses WHERE id = $1', [req.params.id]);
     if (thesisRes.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Thesis record not found.' });

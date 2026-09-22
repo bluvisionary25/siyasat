@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 const AuthModal = ({ isOpen = true, onClose, onLoginSuccess, API_BASE = 'http://localhost:5000/api' }) => {
   const [email, setEmail] = useState('');
@@ -38,10 +39,15 @@ const AuthModal = ({ isOpen = true, onClose, onLoginSuccess, API_BASE = 'http://
         throw new Error(data.message || 'Authentication failed. Please check your inputs.');
       }
 
-      onLoginSuccess(data.token, data.user);
+      const roleStr = data.user?.role || 'User';
+      setSuccessMsg(`Authenticating session... Redirecting to ${roleStr} portal...`);
+      
+      setTimeout(() => {
+        onLoginSuccess(data.token, data.user);
+      }, 2000);
+      
     } catch (err) {
       setError(err.message);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -71,23 +77,29 @@ const AuthModal = ({ isOpen = true, onClose, onLoginSuccess, API_BASE = 'http://
             <p className="text-[#800000] text-sm font-medium mb-8">Hello! Please put your details to continue</p>
 
             {error && <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">{error}</div>}
-            {successMsg && <div className="mb-4 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">{successMsg}</div>}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="relative">
-                <input type="email" required id="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder=" " className="peer w-full px-4 py-3 rounded-xl border border-gray-400 text-gray-800 focus:outline-none focus:border-[#800000] text-sm bg-transparent" />
-                <label htmlFor="email" className="absolute left-3 -top-2.5 bg-white px-2 text-xs font-bold text-[#800000]">Email</label>
+            {successMsg ? (
+              <div className="flex flex-col items-center justify-center py-16 space-y-5">
+                <Loader2 className="w-10 h-10 text-[#800000] animate-spin" />
+                <p className="text-[#800000] font-bold text-center text-sm">{successMsg}</p>
               </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="relative">
+                  <input type="email" required id="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder=" " className="peer w-full px-4 py-3 rounded-xl border border-gray-400 text-gray-800 focus:outline-none focus:border-[#800000] text-sm bg-transparent" />
+                  <label htmlFor="email" className="absolute left-3 -top-2.5 bg-white px-2 text-xs font-bold text-[#800000]">Email</label>
+                </div>
 
-              <div className="relative">
-                <input type="password" required id="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder=" " className="peer w-full px-4 py-3 rounded-xl border border-gray-400 text-gray-800 focus:outline-none focus:border-[#800000] text-sm bg-transparent" />
-                <label htmlFor="password" className="absolute left-3 -top-2.5 bg-white px-2 text-xs font-bold text-[#800000]">Password</label>
-              </div>
+                <div className="relative">
+                  <input type="password" required id="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder=" " className="peer w-full px-4 py-3 rounded-xl border border-gray-400 text-gray-800 focus:outline-none focus:border-[#800000] text-sm bg-transparent" />
+                  <label htmlFor="password" className="absolute left-3 -top-2.5 bg-white px-2 text-xs font-bold text-[#800000]">Password</label>
+                </div>
 
-              <button type="submit" disabled={isLoading} className="w-full py-3 bg-[#F5B842] text-[#800000] font-bold text-base rounded-xl border border-[#d99e2b] shadow-sm cursor-pointer mt-4">
-                {isLoading ? 'Processing...' : 'Log In'}
-              </button>
-            </form>
+                <button type="submit" disabled={isLoading} className="w-full py-3 bg-[#F5B842] text-[#800000] font-bold text-base rounded-xl border border-[#d99e2b] shadow-sm cursor-pointer mt-4">
+                  {isLoading ? 'Processing...' : 'Log In'}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

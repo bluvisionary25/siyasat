@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload as UploadIcon, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Upload as UploadIcon, AlertTriangle, CheckCircle2, ChevronDown } from 'lucide-react';
 import Navbar from './Navbar';
 
 const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
@@ -7,7 +7,7 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
     title: '',
     author: '',
     year: new Date().getFullYear(),
-    branch: '',
+    department: '',
     keywords: '',
     abstract: ''
   });
@@ -27,7 +27,7 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
     uploadData.append('title', formData.title);
     uploadData.append('author', formData.author);
     uploadData.append('year', formData.year);
-    uploadData.append('department', formData.branch || 'AB Land and Water Resources Engineering');
+    uploadData.append('department', formData.department || 'AB Land and Water Resources Engineering');
     uploadData.append('keywords', formData.keywords);
     uploadData.append('abstract', formData.abstract);
     if (file) uploadData.append('file', file);
@@ -145,20 +145,26 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
             {/* BRANCH & KEYWORDS */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="relative">
-                <input
-                  type="text"
+                <select
                   id="upload-branch"
-                  value={formData.branch}
-                  onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                  placeholder=" "
-                  className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent"
-                />
-                <label 
-                  htmlFor="upload-branch" 
-                  className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent appearance-none cursor-pointer"
                 >
-                  Branch
+                  <option value="" disabled hidden></option>
+                  <option value="Land and Water Resources Engineering">Land and Water Resources Engineering</option>
+                  <option value="Farm Power and Machinery Engineering">Farm Power and Machinery Engineering</option>
+                  <option value="Agricultural Structures and Environmental Control Engineering">Agricultural Structures and Environmental Control Engineering</option>
+                  <option value="Agricultural and Biosystems Processing Engineering (Post-Harvest)">Agricultural and Biosystems Processing Engineering (Post-Harvest)</option>
+                  <option value="Agricultural Informatics and Automation">Agricultural Informatics and Automation</option>
+                </select>
+                <label 
+                  htmlFor="upload-department" 
+                  className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all pointer-events-none"
+                >
+                  Department
                 </label>
+                <ChevronDown className="w-4 h-4 text-gray-500 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" />
               </div>
 
               <div className="relative">
