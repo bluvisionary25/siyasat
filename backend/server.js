@@ -43,10 +43,11 @@ const poolConfig = process.env.DATABASE_URL
     }
   : {
       user: process.env.DB_USER || 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      database: process.env.DB_NAME || 'siyasat_db',
-      password: process.env.DB_PASSWORD || 'postgres',
+      host: process.env.DB_HOST || 'db.lgvmnemfuietnoeqgnro.supabase.co',
+      database: process.env.DB_NAME || 'postgres',
+      password: process.env.DB_PASSWORD || 'Clientsidesolutions@05',
       port: process.env.DB_PORT || 5432,
+      ssl: { rejectUnauthorized: false },
     };
 
 const pool = new Pool(poolConfig);
