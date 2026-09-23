@@ -592,39 +592,45 @@ const HomePage = ({
         {/* Content Container positioned safely above watermark */}
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 mb-10 sm:mb-16 relative z-10">
           <div>
-            <h3 className="text-xl font-bold text-[#7A0C0E] mb-3 font-sans tracking-tight">
-              Title
+            <h3 className="text-xl font-bold text-[#7A0C0E] mb-1 font-sans tracking-tight">
+              SIYASAT
             </h3>
+            <p className="text-xs font-semibold text-[#7A0C0E]/90 mb-3">
+              Department of Agricultural and Biosystems Engineering
+            </p>
             <p className="text-xs sm:text-sm text-[#7A0C0E]/85 font-normal leading-relaxed max-w-sm font-sans">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididuntLorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididuntLorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididuntLorem ipsum dolor sit Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididuntLorem ipsum dolor sit
+              Central Luzon State University's institutional repository for Agricultural and Biosystems Engineering research, facilitating automated thematic clustering and AI-powered literature gap exploration.
             </p>
           </div>
 
           <div className="md:text-center">
             <h3 className="text-xl font-bold text-[#7A0C0E] mb-3 font-sans tracking-tight">
-              Links
+              Quick Links
             </h3>
             <ul className="text-xs sm:text-sm text-[#7A0C0E]/85 space-y-1.5 font-normal font-sans inline-block text-left">
               <li
                 onClick={() => onNavigate && onNavigate('home')}
                 className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all"
               >
-                • lorem
+                Home
               </li>
               <li
                 onClick={() => onNavigate && onNavigate('repository')}
                 className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all"
               >
-                • ipsum
+                Repository
               </li>
               <li
                 onClick={() => onNavigate && onNavigate('about')}
                 className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all"
               >
-                • dolor
+                About Us
               </li>
-              <li className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all">
-                • sit amet
+              <li 
+                onClick={() => currentUser ? (onNavigate && onNavigate('upload')) : setIsAuthOpen(true)}
+                className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all"
+              >
+                Upload
               </li>
             </ul>
           </div>
@@ -634,12 +640,22 @@ const HomePage = ({
               Contact Us
             </h3>
             <ul className="text-xs sm:text-sm text-[#7A0C0E]/85 space-y-1.5 font-normal font-sans inline-block text-left md:text-right">
-              <li>• lorem</li>
-              <li>• ipsum</li>
-              <li>• dolor</li>
-              <li>• sit amet</li>
+              <li>
+                <a href="mailto:bsabe@clsu.edu.ph" className="hover:text-[#7A0C0E] hover:font-semibold transition-all">bsabe@clsu.edu.ph</a>
+              </li>
+              <li>
+                <a href="https://www.facebook.com/share/1CDrEGQ2d7/" target="_blank" rel="noopener noreferrer" className="hover:text-[#7A0C0E] hover:font-semibold transition-all">Facebook Page</a>
+              </li>
+              <li>CLSU, Science City of Muñoz, Nueva Ecija, Philippines</li>
             </ul>
           </div>
+        </div>
+
+        {/* BOTTOM BAR / COPYRIGHT */}
+        <div className="relative z-10 border-t border-[#7A0C0E]/20 py-4 text-center">
+          <p className="text-xs text-[#7A0C0E]/70 font-medium">
+            © 2026 Department of Agricultural and Biosystems Engineering, CLSU. All rights reserved.
+          </p>
         </div>
 
         {/* Giant Watermark Typography ("SIYASAT") across the bottom */}
