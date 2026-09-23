@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -6,7 +7,6 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -34,13 +34,22 @@ app.use('/uploads', express.static(uploadDir));
 // -----------------------------------------------------------------------------
 // PostgreSQL Pool Connection
 // -----------------------------------------------------------------------------
-const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'siyasat_db',
-  password: process.env.DB_PASSWORD || 'postgres',
-  port: process.env.DB_PORT || 5432,
-});
+const poolConfig = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    }
+  : {
+      user: process.env.DB_USER || 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      database: process.env.DB_NAME || 'siyasat_db',
+      password: process.env.DB_PASSWORD || 'postgres',
+      port: process.env.DB_PORT || 5432,
+    };
+
+const pool = new Pool(poolConfig);
 
 pool.connect(async (err, client, release) => {
   if (err) {
