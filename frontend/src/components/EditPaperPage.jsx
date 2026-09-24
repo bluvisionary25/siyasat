@@ -26,6 +26,7 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
   const [file, setFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
 
   useEffect(() => {
     if (paper) {
@@ -65,6 +66,7 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
     }
 
     setIsSubmitting(true);
+    setStatusMsg({ type: '', text: '' });
 
     const token = localStorage.getItem('siyasat_token');
     const updateData = new FormData();
@@ -88,6 +90,7 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
 
       if (res.ok) {
         if (onSaveEdit) await onSaveEdit();
+        setStatusMsg({ type: 'success', text: 'Cloud update successful!' });
         setShowSuccessModal(true);
         setTimeout(() => {
           setShowSuccessModal(false);
@@ -96,11 +99,11 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
       } else {
         const errJson = await res.json().catch(() => ({}));
         console.error('Server error response:', errJson);
-        alert(`Failed to save edits: ${errJson.message || 'Database update failed'}`);
+        setStatusMsg({ type: 'error', text: `Failed to save edits: ${errJson.message || 'Database update failed'}` });
       }
     } catch (err) {
       console.error('Edit error:', err.response?.data || err);
-      alert('Network error connecting to backend server.');
+      setStatusMsg({ type: 'error', text: 'Network error connecting to backend server.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -218,7 +221,7 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
 
             <div className="relative flex items-center justify-between px-4 py-2.5 rounded-lg border border-[#800000]/60 bg-transparent text-[#800000]">
               <span className="text-xs font-semibold text-[#800000]/80">
-                {file ? file.name : (paper?.file_path || paper?.filePath ? 'PDF Attached (Click icon to replace)' : 'Attach PDF File (Max 25MB)')}
+                {file ? `Queued for replacement: ${file.name}` : (paper?.file_path || paper?.filePath ? 'PDF Attached (Click icon to replace)' : 'Attach PDF File (Max 25MB)')}
               </span>
               <label className="cursor-pointer">
                 <svg className="w-4 h-4 text-[#800000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,12 +236,26 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
               </label>
             </div>
 
+            {statusMsg.text && (
+              <div className={`p-3 rounded-lg text-xs font-bold ${statusMsg.type === 'error' ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+                {statusMsg.text}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2.5 bg-[#F5B842] hover:bg-[#e0a635] text-[#800000] font-extrabold text-sm rounded-lg border border-[#d99e2b] shadow-2xs cursor-pointer transition-all disabled:opacity-50"
+              className="w-full py-2.5 bg-[#F5B842] hover:bg-[#e0a635] text-[#800000] font-extrabold text-sm rounded-lg border border-[#d99e2b] shadow-2xs cursor-pointer transition-all disabled:opacity-50 flex justify-center items-center gap-2"
             >
-              {isSubmitting ? 'Saving Changes...' : 'Save Edits'}
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 text-[#800000]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving Edits...
+                </>
+              ) : 'Save Edits'}
             </button>
           </form>
 
