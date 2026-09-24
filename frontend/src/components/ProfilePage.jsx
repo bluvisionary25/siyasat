@@ -7,7 +7,7 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout }) => {
   const isElevatedUser = isAdmin || isAdviser;
 
   const [profileImage, setProfileImage] = useState(() => {
-    return currentUser?.profile_image ? `http://localhost:5000/${currentUser.profile_image}` : null;
+    return currentUser?.profile_image ? `${(process.env.REACT_APP_BACKEND_URL || 'https://siyasat-backend.onrender.com')}/${currentUser.profile_image}` : null;
   });
   
   const [userWorks, setUserWorks] = useState([]);
@@ -21,7 +21,7 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout }) => {
 
   useEffect(() => {
     if (currentUser?.id) {
-      fetch(`http://localhost:5000/api/theses?uploaded_by=${currentUser.id}`)
+      fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api')}/theses?uploaded_by=${currentUser.id}`)
         .then(res => res.json())
         .then(data => {
           if (data.theses) setUserWorks(data.theses);
@@ -39,7 +39,7 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout }) => {
 
       try {
         const token = localStorage.getItem('siyasat_token') || sessionStorage.getItem('siyasat_token');
-        const res = await fetch('http://localhost:5000/api/users/profile-picture', {
+        const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api')}/users/profile-picture`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`

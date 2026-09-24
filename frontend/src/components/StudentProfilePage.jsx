@@ -46,7 +46,7 @@ const StudentProfilePage = ({ currentUser, onNavigate, onLogout }) => {
                         <div className="flex items-center space-x-5">
                             <div className="w-16 h-16 rounded-full bg-[#800000] text-[#F5B842] font-black text-2xl flex items-center justify-center shadow-md overflow-hidden">
                                 {currentUser?.profile_image ? (
-                                    <img src={`http://localhost:5000/${currentUser.profile_image}`} alt="Profile" className="w-full h-full object-cover" />
+                                    <img src={`${(process.env.REACT_APP_BACKEND_URL || 'https://siyasat-backend.onrender.com')}/${currentUser.profile_image}`} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
                                     currentUser?.full_name ? currentUser.full_name.charAt(0).toUpperCase() : ''
                                 )}

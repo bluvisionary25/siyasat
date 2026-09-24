@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
-const AuthModal = ({ isOpen = true, onClose, onLoginSuccess, API_BASE = 'http://localhost:5000/api' }) => {
+const AuthModal = ({ isOpen = true, onClose, onLoginSuccess, API_BASE = (process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api') }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

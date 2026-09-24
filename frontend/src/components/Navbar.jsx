@@ -146,7 +146,7 @@ const Navbar = ({
             title={currentUser.full_name || currentUser.email}
           >
             {currentUser.profile_image ? (
-              <img src={`http://localhost:5000/${currentUser.profile_image}`} alt="Avatar" className="w-full h-full object-cover" />
+              <img src={`${(process.env.REACT_APP_BACKEND_URL || 'https://siyasat-backend.onrender.com')}/${currentUser.profile_image}`} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
               getInitial()
             )}

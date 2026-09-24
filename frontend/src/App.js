@@ -10,7 +10,7 @@ import ProfilePage from './components/ProfilePage';
 import AboutUsPage from './components/AboutUsPage';
 import AuthModal from './components/AuthModal';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = (process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api');
 
 // Helper to restore session strictly if valid session exists in localStorage
 const getValidSessionUser = () => {

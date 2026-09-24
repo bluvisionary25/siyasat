@@ -389,6 +389,9 @@ const HomePage = ({
         <div className="max-w-4xl mx-auto text-center relative z-10 px-6 pt-4 pb-12 space-y-6">
 
 
+          <div className="flex justify-center mb-2">
+            <SiyasatLogo variant="white" size="lg" />
+          </div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[42px] font-extrabold tracking-tight leading-tight max-w-3xl mx-auto font-sans drop-shadow-sm text-white">
             A Research and Thesis Repository with AI Gap Analysis Tool
           </h1>
@@ -683,7 +686,7 @@ const HomePage = ({
           }
           if (onNavigate) onNavigate('home');
         }}
-        API_BASE="http://localhost:5000/api"
+        API_BASE={(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api')}
       />
     </div>
   );
