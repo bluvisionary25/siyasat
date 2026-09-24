@@ -233,7 +233,7 @@ const RepositoryPage = ({
 
         {/* SEARCH AND FILTERS BAR */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-6xl mx-auto pt-2">
-          <div className="flex items-center space-x-3 w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
 
             <div className="flex bg-[#FAF8F5] border border-gray-300 rounded-full p-1 shadow-2xs">
               <button
