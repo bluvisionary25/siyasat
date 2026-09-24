@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import Navbar from './Navbar';
 
 const ProfilePage = ({ onNavigate, currentUser, onLogout }) => {
@@ -12,6 +13,18 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout }) => {
   
   const [userWorks, setUserWorks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleConfirmLogout = () => {
+    setIsLoggingOut(true);
+    setTimeout(() => {
+      localStorage.removeItem('siyasat_token');
+      localStorage.removeItem('siyasat_user');
+      if (onLogout) onLogout();
+      window.location.replace('/');
+    }, 800);
+  };
 
   useEffect(() => {
     // Small delay to simulate auth state settlement
@@ -123,11 +136,43 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout }) => {
         </div>
 
         <div className="text-right pt-4">
-          <button onClick={onLogout} className="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-full shadow-sm cursor-pointer">
+          <button onClick={() => setIsLogoutModalOpen(true)} className="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-full shadow-sm cursor-pointer transition-colors">
             Logout Account
           </button>
         </div>
       </main>
+
+      {/* LOGOUT CONFIRMATION MODAL */}
+      {isLogoutModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center space-y-6 animate-in fade-in duration-200">
+            <h3 className="text-lg font-bold text-gray-900">Are you sure you want to log out?</h3>
+            <div className="flex justify-center space-x-3">
+              <button
+                onClick={() => setIsLogoutModalOpen(false)}
+                disabled={isLoggingOut}
+                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-sm rounded-xl cursor-pointer disabled:opacity-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmLogout}
+                disabled={isLoggingOut}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm rounded-xl flex items-center justify-center cursor-pointer disabled:opacity-70 transition-colors w-36"
+              >
+                {isLoggingOut ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Logging out...
+                  </>
+                ) : (
+                  "Yes, Log Out"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
