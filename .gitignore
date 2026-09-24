@@ -1,0 +1,82 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# SIYASAT — Root .gitignore
+# Branch: prototype-4 | v1.0-ReleaseCandidate | CLSU-DABE
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── Node.js Dependencies ──────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# ── Environment Variables (NEVER commit credentials) ─────────────────────────
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+*.env
+
+# ── Uploaded PDF & Temporary Files ───────────────────────────────────────────
+backend/uploads/
+uploads/
+/tmp/
+*.tmp
+*.temp
+
+# ── Build / Production Artifacts ─────────────────────────────────────────────
+frontend/build/
+frontend/dist/
+dist/
+build/
+out/
+
+# ── Python Cache (tooling / scripts) ─────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+.Python
+*.egg-info/
+.eggs/
+
+# ── OS System Files ───────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── IDE / Editor Metadata ─────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vs/
+
+# ── Testing & Coverage ────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+*.lcov
+
+# ── Miscellaneous ─────────────────────────────────────────────────────────────
+*.orig
+*.bak
+*.swp
+.eslintcache
+.parcelcache
+.cache/
+.fusebox/
+.grunt/
+.lock-wscript

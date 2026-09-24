@@ -1,7 +1,7 @@
 import React from 'react';
 import Navbar from './Navbar';
 
-const AboutUsPage = ({ onNavigate, currentUser }) => {
+const AboutUsPage = ({ onNavigate, currentUser, onLoginClick }) => {
   return (
     <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] font-sans relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
       
@@ -10,6 +10,7 @@ const AboutUsPage = ({ onNavigate, currentUser }) => {
         activePage="about" 
         onNavigate={onNavigate} 
         currentUser={currentUser} 
+        onLoginClick={onLoginClick}
       />
 
       {/* MAIN CONTENT CONTAINER */}
@@ -100,6 +101,39 @@ const AboutUsPage = ({ onNavigate, currentUser }) => {
           <p className="text-xs text-gray-700 leading-relaxed font-medium justify-text">
             The BSABE program is designed to produce graduates who possess knowledge, skills, and attitudes in the application of engineering science and designs to the processes and systems involved in the sustainable production, post-production, and processing of safe food, feed, fiber, timber, and other agricultural and biological materials; the efficient utilization, conservation, and management of natural and renewable resources; and development of climate change mitigation measures, in order to enhance human health in harmony with the environment. Agricultural and Biosystems (AB) consist of crops, poultry, livestock, fisheries and aquaculture resources, forestry and other plants, new and renewable energy, wastes, natural resources, and climate. The graduates of BSABE are expected to understand and apply engineering science and designs to identify, analyze, and create solutions for problems concerning land development; irrigation and drainage including dams, farm roads and bridges; AB production machinery; new and renewable energy; AB buildings and structures; postharvest and processing technologies; climate change, and natural resources, environmental and waste management.
           </p>
+        </section>
+
+        {/* CREATORS SECTION */}
+        <section className="space-y-4 pt-4 border-t border-gray-200/50 mt-8 pb-8">
+          <h2 className="text-xl font-extrabold text-[#800000] font-serif text-center">
+            Creators
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-center max-w-3xl mx-auto">
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Downie, Hailie Nichole S.</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Esteban, Emilio</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Gervacio, Rochel Rey G.</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Japson, Althea Myr C.</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Ogena, Angelo</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Ortiz, John Lloyd</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Ruiz, Prince Cathric</p>
+            </div>
+            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
+              <p className="text-sm font-semibold text-gray-800">Valdez, Kiervin C.</p>
+            </div>
+          </div>
         </section>
 
       </main>

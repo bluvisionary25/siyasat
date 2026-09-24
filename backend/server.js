@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -6,16 +7,36 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'siyasat_super_secret_key_2026';
+const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+
+console.log("Groq Key Loaded:", process.env.GROQ_API_KEY ? "YES (starts with " + process.env.GROQ_API_KEY.substring(0, 8) + ")" : "NO - KEY MISSING");
 
 // -----------------------------------------------------------------------------
 // Middleware & Body Parsers
 // -----------------------------------------------------------------------------
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://siyasat.site',
+  'https://www.siyasat.site'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || /\.vercel\.app$/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -31,19 +52,39 @@ app.use('/uploads', express.static(uploadDir));
 // -----------------------------------------------------------------------------
 // PostgreSQL Pool Connection
 // -----------------------------------------------------------------------------
-const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'siyasat_db',
-  password: process.env.DB_PASSWORD || 'postgres',
-  port: process.env.DB_PORT || 5432,
-});
+const poolConfig = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    }
+  : {
+      user: process.env.DB_USER || 'postgres',
+      host: process.env.DB_HOST || 'db.lgvmnemfuietnoeqgnro.supabase.co',
+      database: process.env.DB_NAME || 'postgres',
+      password: process.env.DB_PASSWORD || 'Clientsidesolutions@05',
+      port: process.env.DB_PORT || 5432,
+      ssl: { rejectUnauthorized: false },
+    };
 
-pool.connect((err, client, release) => {
+const pool = new Pool(poolConfig);
+
+pool.connect(async (err, client, release) => {
   if (err) {
     console.error('❌ Database Connection Error:', err.stack);
   } else {
     console.log('✅ Connected to PostgreSQL Database: siyasat_db');
+    try {
+      await client.query(`ALTER TABLE theses ADD COLUMN IF NOT EXISTS cluster_group VARCHAR(120) DEFAULT 'Independent Studies';`);
+      await client.query(`ALTER TABLE theses ADD COLUMN IF NOT EXISTS similarity_score INT DEFAULT 0;`);
+      await client.query(`ALTER TABLE theses ADD COLUMN IF NOT EXISTS matched_thesis_id INT DEFAULT NULL;`);
+      await client.query(`ALTER TABLE theses ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
+      await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image TEXT;`);
+      console.log('✅ Verified/Updated DB schema for clustering and timestamp columns.');
+    } catch (dbErr) {
+      console.error('❌ Error updating schema for clustering/timestamp columns:', dbErr);
+    }
     release();
   }
 });
@@ -68,6 +109,18 @@ const upload = multer({
       cb(null, true);
     } else {
       cb(new Error('Only PDF files are allowed!'), false);
+    }
+  }
+});
+
+const imageUpload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB Limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
     }
   }
 });
@@ -97,45 +150,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'SIYASAT API Server is running.' });
 });
 
-// 1. User Registration Endpoint
-app.post('/api/auth/register', async (req, res) => {
-  const { full_name, email, password, role } = req.body;
-
-  if (!email || !password || !full_name) {
-    return res.status(400).json({ message: 'Full name, email, and password are required.' });
-  }
-
-  try {
-    // Check if user already exists
-    const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ message: 'User with this email already exists.' });
-    }
-
-    // Hash password
-    const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
-
-    // Default role validation
-    const userRole = ['STUDENT', 'ADVISER', 'ADMIN'].includes(role) ? role : 'STUDENT';
-
-    // Insert new user into PostgreSQL
-    const query = `
-      INSERT INTO users (full_name, email, password_hash, role, status)
-      VALUES ($1, $2, $3, $4, 'ACTIVE')
-      RETURNING id, full_name, email, role, status;
-    `;
-    const result = await pool.query(query, [full_name, email, passwordHash, userRole]);
-
-    res.status(201).json({
-      message: 'Account registered successfully.',
-      user: result.rows[0]
-    });
-  } catch (err) {
-    console.error('Registration Error:', err);
-    res.status(500).json({ message: 'Server error during registration: ' + err.message });
-  }
-});
+// Registration disabled - open public access, login reserved for advisers/admins.
 
 // 2. User Login with 5-Attempt Lockout
 app.post('/api/auth/login', async (req, res) => {
@@ -207,7 +222,8 @@ app.post('/api/auth/login', async (req, res) => {
         full_name: user.full_name,
         email: user.email,
         role: user.role,
-        status: user.status
+        status: user.status,
+        profile_image: user.profile_image
       }
     });
   } catch (err) {
@@ -216,9 +232,30 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// 2.1 Profile Picture Upload
+app.post('/api/users/profile-picture', authenticateToken, imageUpload.single('profile_image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image uploaded' });
+    }
+    const normalizedPath = req.file.path.replace(/\\/g, '/');
+    const updateRes = await pool.query(
+      'UPDATE users SET profile_image = $1 WHERE id = $2 RETURNING id, full_name, email, role, profile_image',
+      [normalizedPath, req.user.id]
+    );
+    if (updateRes.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    res.json({ message: 'Profile picture updated', user: updateRes.rows[0] });
+  } catch (err) {
+    console.error('Profile Picture Upload Error:', err);
+    res.status(500).json({ message: 'Failed to upload profile picture' });
+  }
+});
+
 // 3. Fetch Theses with Multi-Criteria Search & Filters (Publicly Accessible)
 app.get('/api/theses', async (req, res) => {
-  const { q, year, sort } = req.query;
+  const { q, year, sort, uploaded_by } = req.query;
 
   try {
     let queryStr = 'SELECT * FROM theses WHERE 1=1';
@@ -232,6 +269,11 @@ app.get('/api/theses', async (req, res) => {
     if (year) {
       params.push(parseInt(year, 10));
       queryStr += ` AND year = $${params.length}`;
+    }
+
+    if (uploaded_by) {
+      params.push(parseInt(uploaded_by, 10));
+      queryStr += ` AND uploaded_by = $${params.length}`;
     }
 
     if (sort === 'year_desc') {
@@ -347,6 +389,105 @@ async function checkForDuplicateThesis(title = '', abstract = '') {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Autonomous Similarity Decision Engine
+// -----------------------------------------------------------------------------
+const ACADEMIC_STOPWORDS = new Set([
+  'the', 'and', 'of', 'in', 'to', 'a', 'is', 'for', 'with', 'on', 'by', 'an', 
+  'study', 'research', 'analysis', 'effect', 'using', 'based', 'from', 'as', 
+  'at', 'this', 'that', 'which', 'evaluation', 'development', 'performance',
+  'design'
+]);
+
+function getCleanTokens(text) {
+  const tokens = String(text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !ACADEMIC_STOPWORDS.has(w))
+    .map(w => {
+      const stemmed = w.replace(/(ing|ed|ion|s|es|or|ator|ated|ation|er|ive|al|e)$/, '');
+      return stemmed.length >= 3 ? stemmed : w;
+    });
+  return new Set(tokens);
+}
+
+function computeSimilarityAndCluster(targetThesis, allTheses) {
+  console.log(`[Similarity Engine] Scanning Thesis #${targetThesis.id || 'NEW'} - Fields: Title, Abstract, Keywords`);
+  const targetTitle = getCleanTokens(targetThesis.title);
+  const targetAbstract = getCleanTokens(targetThesis.abstract);
+  const targetKeywords = getCleanTokens(targetThesis.keywords);
+  
+  let highestSim = 0;
+  let matchedThesis = null;
+
+  for (const thesis of allTheses) {
+    if (targetThesis.id && String(thesis.id) === String(targetThesis.id)) continue;
+    
+    const compTitle = getCleanTokens(thesis.title);
+    const compAbstract = getCleanTokens(thesis.abstract);
+    const compKeywords = getCleanTokens(thesis.keywords);
+    
+    const calcWeightedOverlap = (set1, set2, weight) => {
+      let inter = 0;
+      for (const w of set1) if (set2.has(w)) inter += weight;
+      return inter;
+    };
+    
+    const titleInter = calcWeightedOverlap(targetTitle, compTitle, 1.5);
+    const abstractInter = calcWeightedOverlap(targetAbstract, compAbstract, 1.0);
+    const keywordInter = calcWeightedOverlap(targetKeywords, compKeywords, 1.5);
+    
+    const intersectionScore = titleInter + abstractInter + keywordInter;
+    
+    const targetWeight = (targetTitle.size * 1.5) + (targetAbstract.size * 1.0) + (targetKeywords.size * 1.5);
+    const compWeight = (compTitle.size * 1.5) + (compAbstract.size * 1.0) + (compKeywords.size * 1.5);
+    const minWeight = Math.min(targetWeight, compWeight);
+    
+    let similarity_percentage = 0;
+    if (minWeight > 0) {
+      similarity_percentage = Math.min(100, Math.round((intersectionScore / minWeight) * 100));
+    }
+    
+    if (similarity_percentage > highestSim) {
+      highestSim = similarity_percentage;
+      matchedThesis = thesis;
+    }
+  }
+
+  if (highestSim >= 50 && matchedThesis && matchedThesis.cluster_group) {
+    return {
+      cluster_group: matchedThesis.cluster_group,
+      similarity_score: highestSim,
+      matched_thesis_id: matchedThesis.id
+    };
+  } else {
+    let newFolderName = "Independent Studies";
+    if (targetThesis.keywords) {
+      const keywordsList = targetThesis.keywords.split(',').map(k => k.trim()).filter(k => k);
+      if (keywordsList.length > 0) {
+        newFolderName = keywordsList[0];
+        newFolderName = newFolderName.replace(/\b\w/g, c => c.toUpperCase());
+        if (!newFolderName.toLowerCase().includes("studies") && !newFolderName.toLowerCase().includes("domain")) {
+          newFolderName += " Domain";
+        }
+      }
+    } else {
+      const titleTokens = Array.from(targetTitle).slice(0, 3);
+      if (titleTokens.length > 0) {
+        newFolderName = titleTokens.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') + " Domain";
+      }
+    }
+    
+    return {
+      cluster_group: newFolderName,
+      similarity_score: 100,
+      matched_thesis_id: null
+    };
+  }
+}
+
+
 // Duplication Check API Endpoint
 app.post('/api/theses/check-duplicate', async (req, res) => {
   try {
@@ -390,9 +531,12 @@ app.post('/api/theses', authenticateToken, upload.single('file'), async (req, re
 
     const normalizedPath = req.file.path.replace(/\\/g, '/');
 
+    const existingRes = await pool.query('SELECT * FROM theses');
+    const clusterResult = computeSimilarityAndCluster({ title, abstract, keywords }, existingRes.rows);
+
     const query = `
-      INSERT INTO theses (title, abstract, author, year, keywords, department, file_path, uploaded_by)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO theses (title, abstract, author, year, keywords, department, file_path, uploaded_by, cluster_group, similarity_score, matched_thesis_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *;
     `;
     const values = [
@@ -403,7 +547,10 @@ app.post('/api/theses', authenticateToken, upload.single('file'), async (req, re
       keywords || '',
       department || 'Department of Agricultural and Biosystems Engineering',
       normalizedPath,
-      req.user.id
+      req.user.id,
+      clusterResult.cluster_group,
+      clusterResult.similarity_score,
+      clusterResult.matched_thesis_id
     ];
 
     const result = await pool.query(query, values);
@@ -411,6 +558,111 @@ app.post('/api/theses', authenticateToken, upload.single('file'), async (req, re
   } catch (err) {
     console.error('Upload Error:', err);
     res.status(500).json({ message: 'Internal server error during upload: ' + err.message });
+  }
+});
+
+// 4.1 Update Thesis Route
+app.put('/api/theses/:id', authenticateToken, upload.single('file'), async (req, res) => {
+  try {
+    const { title, author, year, keywords, abstract, department } = req.body;
+    
+    // Auto re-run evaluation if title or abstract changes
+    const existingRes = await pool.query('SELECT * FROM theses');
+    const clusterResult = computeSimilarityAndCluster({ 
+      id: req.params.id, 
+      title: title || '', 
+      abstract: abstract || '', 
+      keywords: keywords || '' 
+    }, existingRes.rows);
+
+    let query = `
+      UPDATE theses
+      SET title = $1, author = $2, year = $3, keywords = $4, abstract = $5, department = $6, 
+          cluster_group = $7, similarity_score = $8, matched_thesis_id = $9
+    `;
+    
+    const values = [
+      title, author, parseInt(year, 10), keywords || '', abstract, department,
+      clusterResult.cluster_group, clusterResult.similarity_score, clusterResult.matched_thesis_id
+    ];
+
+    if (req.file) {
+      const normalizedPath = req.file.path.replace(/\\/g, '/');
+      query += `, file_path = $10 WHERE id = $11 RETURNING *;`;
+      values.push(normalizedPath, req.params.id);
+    } else {
+      query += ` WHERE id = $10 RETURNING *;`;
+      values.push(req.params.id);
+    }
+
+    const result = await pool.query(query, values);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Thesis not found.' });
+    }
+    res.json({ message: 'Thesis updated successfully.', thesis: result.rows[0] });
+  } catch (err) {
+    console.error('Update Error:', err);
+    res.status(500).json({ message: 'Internal server error during update.' });
+  }
+});
+
+// 4.1.5 Delete Thesis Route
+app.delete('/api/theses/:id', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Access denied. Administrator privileges required.' });
+    }
+    const result = await pool.query('DELETE FROM theses WHERE id = $1 RETURNING *', [req.params.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Thesis not found.' });
+    }
+    
+    // Attempt to delete associated file
+    if (result.rows[0].file_path) {
+      const fs = require('fs');
+      if (fs.existsSync(result.rows[0].file_path)) {
+        try {
+          fs.unlinkSync(result.rows[0].file_path);
+        } catch (fileErr) {
+          console.error('Failed to delete associated PDF file:', fileErr);
+        }
+      }
+    }
+
+    res.json({ message: 'Thesis deleted successfully.' });
+  } catch (err) {
+    console.error('Delete Error:', err);
+    res.status(500).json({ message: 'Internal server error during deletion.' });
+  }
+});
+
+// 4.2 Recluster All Route
+app.post('/api/theses/recluster-all', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ message: 'Access denied. Administrator privileges required.' });
+  }
+  try {
+    const existingRes = await pool.query('SELECT * FROM theses ORDER BY created_at ASC');
+    let thesesList = existingRes.rows;
+    let updatedCount = 0;
+    const currentClustered = [];
+
+    for (const thesis of thesesList) {
+      const clusterResult = computeSimilarityAndCluster(thesis, currentClustered);
+      const newThesisData = { ...thesis, ...clusterResult };
+      currentClustered.push(newThesisData);
+
+      await pool.query(
+        'UPDATE theses SET cluster_group = $1, similarity_score = $2, matched_thesis_id = $3 WHERE id = $4',
+        [clusterResult.cluster_group, clusterResult.similarity_score, clusterResult.matched_thesis_id, thesis.id]
+      );
+      updatedCount++;
+    }
+
+    res.json({ message: `Successfully reclustered ${updatedCount} theses.` });
+  } catch (err) {
+    console.error('Recluster Error:', err);
+    res.status(500).json({ message: 'Internal server error during reclustering.' });
   }
 });
 
@@ -559,94 +811,255 @@ app.post('/api/theses/generate-pdf', (req, res) => {
 });
 
 // 6. AI Research Gap Analysis Tool Routes
-async function generateAiGaps({ title, abstract, department, keywords }) {
+async function generateAiGaps({ id, title, abstract, department, keywords }) {
   const deptName = department || 'Agricultural and Biosystems Engineering';
   const paperTitle = title || 'Research Study';
   const paperAbstract = abstract || '';
 
   const apiKey = process.env.GROQ_API_KEY;
-  if (apiKey && apiKey.startsWith('gsk_')) {
-    try {
-      const prompt = `You are an expert AI academic research reviewer in ${deptName}.
-Analyze the following thesis proposal/paper details:
+  if (!apiKey) {
+    throw new Error('GROQ_API_KEY is not configured.');
+  }
+
+  // Query PostgreSQL for 3-5 existing departmental theses to provide local context (if available)
+  let relatedDataset = [];
+  try {
+    const relatedRes = await pool.query(
+      'SELECT id, title, year, abstract, keywords FROM theses WHERE id != $1 ORDER BY created_at DESC LIMIT 5',
+      [id || -1]
+    );
+    relatedDataset = relatedRes.rows.map(t => ({
+      id: t.id,
+      title: t.title,
+      year: t.year,
+      abstract: t.abstract ? t.abstract.substring(0, 500) : '',
+      keywords: t.keywords
+    }));
+  } catch (err) {
+    console.error('Error fetching related theses:', err);
+  }
+
+  const prompt = `Act as a senior academic research advisor in ${deptName}.
+Analyze the given thesis abstract against department context to identify 2 to 3 substantive, high-impact research gaps.
+For each gap, output:
+- gap_title: Concise, technical gap heading.
+- description: Explicit breakdown of the unaddressed variable, methodological limitation, or parameter boundary.
+- search_query: A targeted 3-5 word academic search string tailored for scholarly literature indexes (e.g., "passive cooling root zone hydroponics").
+- local_citations: An array of 1-2 matching internal thesis objects { id, title, note } if relevant from the local set, or empty array if none closely apply.
+
+Current Paper:
 Title: ${paperTitle}
 Abstract: ${paperAbstract}
 Keywords: ${keywords || 'None'}
 
-Identify 4 specific, high-quality research gaps or unaddressed opportunities related to this work.
-Return strictly a valid JSON object with the key "gaps" containing an array of exactly 4 objects. Each object must have:
-"id": (number 1 to 4)
-"title": (string, concise title of the research gap)
-"desc": (string, detailed 2-3 sentence explanation of the gap and why further research is needed)
+Local Department Context (Recent Theses):
+${JSON.stringify(relatedDataset)}
 
+Return strictly a valid JSON object matching exactly this schema:
+{
+  "gaps": [
+    {
+      "gap_title": "String",
+      "description": "String",
+      "search_query": "String",
+      "local_citations": [
+        {
+          "id": 0,
+          "title": "String",
+          "note": "String"
+        }
+      ]
+    }
+  ]
+}
 Output JSON only, with no markdown code blocks or additional conversational text.`;
 
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.5,
-          max_tokens: 1000
-        })
-      });
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+      messages: [{ role: 'system', content: prompt }]
+    })
+  });
 
-      if (response.ok) {
-        const result = await response.json();
-        const content = result.choices?.[0]?.message?.content?.trim();
-        if (content) {
-          const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-          const parsed = JSON.parse(jsonStr);
-          if (parsed && Array.isArray(parsed.gaps) && parsed.gaps.length > 0) {
-            return parsed.gaps.map((g, idx) => ({
-              id: idx + 1,
-              title: g.title || `Research Gap ${idx + 1}`,
-              desc: g.desc || g.description || ''
-            }));
+  if (!response.ok) {
+    const errBody = await response.text();
+    throw new Error(`Groq API Error: ${errBody}`);
+  }
+
+  const result = await response.json();
+  const content = result.choices?.[0]?.message?.content?.trim();
+  if (!content) {
+    throw new Error('Groq API returned empty content.');
+  }
+
+  const parsed = JSON.parse(content);
+  if (parsed && Array.isArray(parsed.gaps) && parsed.gaps.length > 0) {
+    const enrichedGaps = await Promise.all(parsed.gaps.map(async (gap, i) => {
+      let online_references = [];
+      if (gap.search_query) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        try {
+          const searchUrl = `https://api.openalex.org/works?search=${encodeURIComponent(gap.search_query)}&filter=type:article,is_retracted:false&per_page=3&sort=relevance_score:desc`;
+          const searchRes = await fetch(searchUrl, {
+            headers: {
+              'User-Agent': 'SIYASAT-AcademicRepo/1.0 (mailto:admin@clsu.edu.ph)'
+            },
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            const items = searchData?.results || [];
+            online_references = items.map(item => ({
+              title: item.display_name || item.title || "Scholarly Publication",
+              authors: item.authorships?.slice(0, 3).map(a => a.author?.display_name).filter(Boolean).join(", ") || "Academic Researchers",
+              year: item.publication_year || "Recent",
+              journal: item.primary_location?.source?.display_name || "Peer-Reviewed Journal",
+              doi_url: item.doi || item.primary_location?.landing_page_url || item.open_access?.oa_url || null
+            })).filter(ref => ref.doi_url && ref.doi_url.startsWith('http'));
+          }
+        } catch (err) {
+          if (err.name === 'AbortError') {
+            console.error('OpenAlex Fetch timeout for query:', gap.search_query);
+          } else {
+            console.error('OpenAlex Fetch Error:', err);
           }
         }
       }
-    } catch (err) {
-      console.warn('Groq API call failed, falling back to dynamic gap generation:', err.message);
-    }
+      
+      return {
+        id: gap.id || i + 1,
+        title: gap.gap_title || gap.title || `Research Gap ${i + 1}`,
+        desc: gap.description || gap.desc || '',
+        search_query: gap.search_query || '',
+        cited_papers: gap.local_citations || gap.cited_papers || gap.supporting_papers || [],
+        online_references
+      };
+    }));
+    return enrichedGaps;
   }
 
-  const keywordsList = typeof keywords === 'string' ? keywords.split(',').map(k => k.trim()).filter(Boolean) : [];
-  const primaryTopic = keywordsList[0] || paperTitle.split(' ')[0] || 'the studied topic';
-
-  return [
-    {
-      id: 1,
-      title: `Limited long-term field validation for ${primaryTopic} under regional microclimates`,
-      desc: `While ${paperTitle} demonstrates short-term viability in ${deptName}, there is insufficient empirical data regarding multi-season stability and environmental degradation in diverse local field environments.`
-    },
-    {
-      id: 2,
-      title: `Lack of cost-benefit analysis and adoption metrics for smallholders`,
-      desc: `Existing research focuses primarily on technical parameters. Future studies should quantify capital expenditure, ROI timeline, and socio-economic adoption barriers for small-scale operations in ${deptName}.`
-    },
-    {
-      id: 3,
-      title: `Integration constraints with automated monitoring and IoT telemetry`,
-      desc: `The methodology described in "${paperTitle}" lacks real-time sensor integration and low-power telemetry protocols, limiting remote operational control and predictive maintenance.`
-    },
-    {
-      id: 4,
-      title: `Insufficient lifecycle assessment and scalable manufacturing benchmarks`,
-      desc: `Further investigation is required into the carbon footprint, raw material recycling options, and scalable fabrication methods suitable for local industrial production.`
-    }
-  ];
+  throw new Error('Groq API returned an invalid JSON schema.');
 }
 
 app.post('/api/analyze-gaps', async (req, res) => {
   try {
-    const { title, abstract, department, keywords } = req.body;
-    const gaps = await generateAiGaps({ title, abstract, department, keywords });
-    res.json({ success: true, message: 'AI Analysis complete', gaps });
+    const { id, title, abstract, department, keywords } = req.body;
+    const gaps = await generateAiGaps({ id, title, abstract, department, keywords });
+    res.json({ success: true, message: 'Hybrid AI Research Gap Analysis complete', gaps });
+  } catch (err) {
+    console.error('AI Analysis Error:', err);
+    res.status(500).json({ success: false, message: 'Failed to generate AI Research Gap Report.' });
+  }
+});
+
+app.post('/api/analyze-global-gaps', async (req, res) => {
+  try {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ success: false, message: 'GROQ_API_KEY is not configured.' });
+    }
+
+    const thesesRes = await pool.query('SELECT id, title, year, abstract, keywords FROM theses ORDER BY created_at DESC LIMIT 30');
+    if (thesesRes.rows.length === 0) {
+      return res.status(400).json({ success: false, message: 'Not enough data in the repository for analysis.' });
+    }
+
+    // Process and truncate abstracts to 650 chars max to fit token limits
+    const dataset = thesesRes.rows.map(t => ({
+      id: t.id,
+      title: t.title,
+      year: t.year,
+      abstract: t.abstract ? t.abstract.substring(0, 650) : '',
+      keywords: t.keywords
+    }));
+
+    const systemPrompt = `You are an expert academic research analyst. Synthesize 3 to 5 clear research gaps across the provided dataset. 
+Enforce citation coverage: Across all identified gaps, you must cite a total of at least 20 unique papers from the provided set. 
+Restrict your analysis strictly to the provided internal records (air-gapped RAG). Do not use external internet browsing or prior knowledge.
+
+Return valid JSON exactly matching this schema:
+{
+  "analyzed_count": <number_of_papers_analyzed>,
+  "domain_summary": "<High-level summary of analyzed research themes>",
+  "gaps": [
+    {
+      "gap_title": "<Title of the identified gap>",
+      "description": "<Comprehensive explanation of what is underexplored or missing>",
+      "supporting_papers": [
+        {
+          "id": <paper_id>,
+          "title": "<Exact Thesis Title>",
+          "year": <paper_year>,
+          "note": "<Brief explanation of how this study reveals or relates to the gap>"
+        }
+      ]
+    }
+  ]
+}
+
+Dataset:
+${JSON.stringify(dataset)}
+`;
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [{ role: 'system', content: systemPrompt }]
+      })
+    });
+
+    if (!response.ok) {
+      const errBody = await response.text();
+      console.error('Groq API Error:', errBody);
+      throw new Error(`Groq API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    const resultJson = JSON.parse(data.choices[0].message.content);
+
+    res.json({ success: true, message: 'Global AI Analysis complete', result: resultJson });
+  } catch (err) {
+    console.error('Global AI Analysis Error:', err);
+    res.status(500).json({ success: false, message: 'Failed to generate global AI Research Gap Report.' });
+  }
+});
+
+app.post('/api/analyze-single-gap', async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    if (authHeader) {
+      const token = authHeader.split(' ')[1];
+      if (token) {
+        try {
+          const user = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_key');
+          if (user && user.role === 'ADMIN') {
+            return res.status(403).json({ success: false, message: 'AI Analysis feature is not available for Administrator accounts.' });
+          }
+        } catch (e) {}
+      }
+    }
+
+    const { id, title, abstract, department, keywords } = req.body;
+    const gaps = await generateAiGaps({ id, title, abstract, department, keywords });
+    res.json({ success: true, message: 'Hybrid AI Research Gap Analysis complete', gaps });
   } catch (err) {
     console.error('AI Analysis Error:', err);
     res.status(500).json({ success: false, message: 'Failed to generate AI Research Gap Report.' });
@@ -655,6 +1068,10 @@ app.post('/api/analyze-gaps', async (req, res) => {
 
 app.post('/api/theses/:id/analyze-gap', authenticateToken, async (req, res) => {
   try {
+    if (req.user && req.user.role === 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'AI Analysis feature is not available for Administrator accounts.' });
+    }
+
     const thesisRes = await pool.query('SELECT * FROM theses WHERE id = $1', [req.params.id]);
     if (thesisRes.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Thesis record not found.' });

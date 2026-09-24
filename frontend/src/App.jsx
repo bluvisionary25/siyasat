@@ -10,27 +10,129 @@ import ProfilePage from './components/ProfilePage';
 import AboutUsPage from './components/AboutUsPage';
 import AuthModal from './components/AuthModal';
 
+const API_BASE = (process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api');
+
+const ProtectedRoute = ({ isAllowed, redirectPath = 'home', children, onDenied, setCurrentPage, setShowAuthModal, currentUser }) => {
+    useEffect(() => {
+        if (!isAllowed) {
+            onDenied();
+        }
+    }, [isAllowed, onDenied]);
+
+    return isAllowed ? children : null;
+};
+
+// Helper to restore session strictly if valid session exists in localStorage
+const getValidSessionUser = () => {
+    try {
+        const token = localStorage.getItem('siyasat_token');
+        const savedUserStr = localStorage.getItem('siyasat_user');
+        if (!token || !savedUserStr) {
+            return null;
+        }
+
+        // Verify JWT expiration if it is a standard JWT token
+        const parts = token.split('.');
+        if (parts.length === 3) {
+            const payloadBase64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            const payloadJson = decodeURIComponent(
+                atob(payloadBase64)
+                    .split('')
+                    .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            const decoded = JSON.parse(payloadJson);
+            if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+                localStorage.removeItem('siyasat_token');
+                localStorage.removeItem('siyasat_user');
+                return null;
+            }
+        }
+
+        const parsedUser = JSON.parse(savedUserStr);
+        const role = parsedUser?.role?.toUpperCase();
+        // Only restore elevated ADMIN or ADVISER view if valid session exists
+        if (role === 'ADMIN' || role === 'ADVISER') {
+            return parsedUser;
+        }
+        return null;
+    } catch (err) {
+        console.warn('Invalid session in localStorage, clearing:', err);
+        localStorage.removeItem('siyasat_token');
+        localStorage.removeItem('siyasat_user');
+        return null;
+    }
+};
+
+// Helper to determine initial route and search params from browser URL
+const getInitialRoute = () => {
+    try {
+        const pathname = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+        const params = new URLSearchParams(window.location.search);
+        const q = params.get('q') || params.get('search') || params.get('keyword') || '';
+        const pageParam = params.get('page')?.toLowerCase();
+        const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+
+        let page = pageParam || pathname || hash || 'home';
+        if (page === 'repo') page = 'repository';
+        if (page === 'about-us' || page === 'aboutus') page = 'about';
+        if (page === 'paper' || page === 'details') page = 'paper-details';
+        if (page === 'accounts') page = 'users';
+
+        const validPages = ['home', 'repository', 'about', 'paper-details', 'upload', 'users', 'profile', 'login'];
+        const resolvedPage = validPages.includes(page) ? page : 'home';
+
+        return {
+            page: resolvedPage,
+            search: q ? decodeURIComponent(q).trim() : ''
+        };
+    } catch (e) {
+        console.error('Error determining initial route:', e);
+        return { page: 'home', search: '' };
+    }
+};
+
 function App() {
-    const [currentPage, setCurrentPage] = useState('home');
+    // Public/unauthenticated users strictly load as guests (null).
+    // Only restore ADMIN or ADVISER view if a valid session exists in localStorage.
+    const [currentUser, setCurrentUser] = useState(() => getValidSessionUser());
 
-    const [currentUser, setCurrentUser] = useState({
-        id: 1,
-        full_name: 'Admin User',
-        role: 'ADMIN'
-    });
-
+    const initialRoute = getInitialRoute();
+    const [currentPage, setCurrentPage] = useState(() => initialRoute.page === 'login' ? 'home' : initialRoute.page);
+    const [repositorySearchQuery, setRepositorySearchQuery] = useState(() => initialRoute.search);
+    const [pendingDestination, setPendingDestination] = useState(null);
     const [selectedPaper, setSelectedPaper] = useState(null);
-    const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showAuthModal, setShowAuthModal] = useState(() => initialRoute.page === 'login');
     const [theses, setTheses] = useState([]);
     const [usersList, setUsersList] = useState([]);
 
     useEffect(() => {
         fetchTheses();
+        const token = localStorage.getItem('siyasat_token');
+        if (token && currentUser?.role === 'ADMIN') {
+            fetchUsers();
+        }
+    }, [currentUser]);
+
+    useEffect(() => {
+        const handlePopState = () => {
+            const route = getInitialRoute();
+            if (route.page === 'login') {
+                setShowAuthModal(true);
+            } else {
+                setCurrentPage(route.page);
+            }
+            if (route.search) {
+                setRepositorySearchQuery(route.search);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
     const fetchTheses = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/theses');
+            const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api')}/theses`);
             if (!res.ok) throw new Error('Failed to fetch theses');
             const data = await res.json();
 
@@ -51,7 +153,7 @@ function App() {
         if (!token) return;
 
         try {
-            const res = await fetch('http://localhost:5000/api/admin/users', {
+            const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api')}/admin/users`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -61,48 +163,79 @@ function App() {
         }
     };
 
-    const handleLoginSuccess = (userData, token) => {
-        localStorage.setItem('siyasat_token', token);
+    const handleLoginSuccess = (arg1, arg2) => {
+        let token = '';
+        let userData = null;
+
+        if (typeof arg1 === 'string') {
+            token = arg1;
+            userData = arg2;
+        } else if (typeof arg2 === 'string') {
+            token = arg2;
+            userData = arg1;
+        } else if (arg1 && arg1.token) {
+            token = arg1.token;
+            userData = arg1.user || arg1;
+        }
+
+        if (token) localStorage.setItem('siyasat_token', token);
+        if (userData) localStorage.setItem('siyasat_user', JSON.stringify(userData));
         setCurrentUser(userData);
         setShowAuthModal(false);
 
-        if (userData.role === 'ADMIN') {
+        if (userData?.role === 'ADMIN') {
             fetchUsers();
+        }
+
+        if (pendingDestination) {
+            const dest = pendingDestination;
+            setPendingDestination(null);
+            handleNavigate(dest);
         }
     };
 
     const handleLogout = () => {
         localStorage.removeItem('siyasat_token');
+        localStorage.removeItem('siyasat_user');
         setCurrentUser(null);
         setCurrentPage('home');
     };
 
     // Enhanced navigation handler that accepts optional paper context
-    const handleNavigate = (page, paperData = null) => {
+    const handleNavigate = (page, extraData = null) => {
         const targetPage = page ? String(page).trim() : 'home';
 
         // Always update selectedPaper when paper context is provided
-        if (paperData !== null && paperData !== undefined) {
-            setSelectedPaper(paperData);
+        if (extraData !== null && extraData !== undefined) {
+            if (typeof extraData === 'object' && (extraData.title || extraData.abstract)) {
+                setSelectedPaper(extraData);
+            } else if (typeof extraData === 'object' && extraData.searchQuery !== undefined) {
+                setRepositorySearchQuery(extraData.searchQuery || '');
+            } else if (typeof extraData === 'string' && targetPage === 'repository') {
+                setRepositorySearchQuery(extraData);
+            }
         }
 
         if (targetPage === 'upload') {
             if (!currentUser) {
+                setPendingDestination('upload');
                 setShowAuthModal(true);
                 return;
             }
-            if (currentUser.role !== 'ADMIN' && currentUser.role !== 'ADVISER') {
+            const role = currentUser.role?.toUpperCase();
+            if (role !== 'ADMIN' && role !== 'ADVISER') {
                 alert('Access denied. Administrator or Adviser privileges required to upload.');
                 return;
             }
         }
 
-        if (targetPage === 'users') {
+        if (targetPage === 'users' || targetPage === 'accounts') {
             if (!currentUser) {
+                setPendingDestination('users');
                 setShowAuthModal(true);
                 return;
             }
-            if (currentUser.role !== 'ADMIN') {
+            if (currentUser.role?.toUpperCase() !== 'ADMIN') {
                 alert('Access denied. Administrator privileges required.');
                 return;
             }
@@ -110,10 +243,34 @@ function App() {
         }
 
         if (targetPage === 'edit-paper' || targetPage === 'editpaper' || targetPage === 'edit') {
-            if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'ADVISER')) {
+            if (!currentUser) {
+                setPendingDestination(targetPage);
+                setShowAuthModal(true);
+                return;
+            }
+            const role = currentUser.role?.toUpperCase();
+            if (role !== 'ADMIN' && role !== 'ADVISER') {
                 alert('Access denied. Only Administrators or Advisers can edit papers.');
                 return;
             }
+        }
+
+        if (targetPage === 'profile' && !currentUser) {
+            setPendingDestination('profile');
+            setShowAuthModal(true);
+            return;
+        }
+
+        // Sync browser URL cleanly
+        try {
+            const urlPath = targetPage === 'home' ? '/' : `/${targetPage}`;
+            const queryToEncode = typeof extraData === 'object' && extraData?.searchQuery !== undefined
+                ? extraData.searchQuery
+                : (typeof extraData === 'string' && targetPage === 'repository' ? extraData : (targetPage === 'repository' ? repositorySearchQuery : ''));
+            const searchSuffix = targetPage === 'repository' && queryToEncode ? `?search=${encodeURIComponent(queryToEncode)}` : '';
+            window.history.pushState(null, '', `${urlPath}${searchSuffix}`);
+        } catch (err) {
+            console.warn('URL pushState failed:', err);
         }
 
         setCurrentPage(targetPage);
@@ -134,7 +291,7 @@ function App() {
         }
 
         try {
-            const res = await fetch(`http://localhost:5000/api/theses/${paperId}`, {
+            const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api')}/theses/${paperId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -163,7 +320,7 @@ function App() {
         }
 
         try {
-            const res = await fetch(`http://localhost:5000/api/admin/users/${userId}/role`, {
+            const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api')}/admin/users/${userId}/role`, {
                 method: 'PUT',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -192,7 +349,7 @@ function App() {
         }
 
         try {
-            const res = await fetch(`http://localhost:5000/api/admin/users/${userId}/status`, {
+            const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api')}/admin/users/${userId}/status`, {
                 method: 'PUT',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -225,7 +382,9 @@ function App() {
                     onSelectPaper={(paper) => setSelectedPaper(paper)}
                     onOpenAuth={() => setShowAuthModal(true)}
                     onLoginClick={() => setShowAuthModal(true)}
+                    onLoginSuccess={handleLoginSuccess}
                     onGoToPortal={() => handleNavigate('repository')}
+                    onLogout={handleLogout}
                 />
             )}
 
@@ -236,6 +395,9 @@ function App() {
                     thesesList={theses}
                     onSelectPaper={(paper) => setSelectedPaper(paper)}
                     onDeletePaper={handleDeletePaper}
+                    onLogout={handleLogout}
+                    onLoginClick={() => setShowAuthModal(true)}
+                    initialSearchQuery={repositorySearchQuery}
                 />
             )}
 
@@ -245,26 +407,45 @@ function App() {
                     onNavigate={handleNavigate}
                     currentUser={currentUser}
                     onDeletePaper={handleDeletePaper}
+                    onLogout={handleLogout}
+                    onLoginClick={() => setShowAuthModal(true)}
                 />
             )}
 
-            {activePage === 'upload' && (currentUser?.role === 'ADMIN' || currentUser?.role === 'ADVISER') && (
-                <UploadPage
-                    onNavigate={handleNavigate}
-                    currentUser={currentUser}
-                    onUploadSuccess={fetchTheses}
-                />
+            {activePage === 'upload' && (
+                <ProtectedRoute
+                    isAllowed={currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'ADVISER')}
+                    onDenied={() => {
+                        if (!currentUser) setShowAuthModal(true);
+                        else alert('Uploads are restricted to Faculty Advisers and System Administrators.');
+                        setCurrentPage('home');
+                    }}
+                >
+                    <UploadPage
+                        onNavigate={handleNavigate}
+                        currentUser={currentUser}
+                        onUploadSuccess={fetchTheses}
+                    />
+                </ProtectedRoute>
             )}
 
-            {(activePage === 'edit-paper' || activePage === 'editpaper' || activePage === 'edit') &&
-                (currentUser?.role === 'ADMIN' || currentUser?.role === 'ADVISER') && (
+            {(activePage === 'edit-paper' || activePage === 'editpaper' || activePage === 'edit') && (
+                <ProtectedRoute
+                    isAllowed={currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'ADVISER')}
+                    onDenied={() => {
+                        if (!currentUser) setShowAuthModal(true);
+                        else alert('Access denied. Only Administrators or Advisers can edit papers.');
+                        setCurrentPage('home');
+                    }}
+                >
                     <EditPaperPage
                         paper={selectedPaper}
                         onNavigate={handleNavigate}
                         currentUser={currentUser}
                         onSaveEdit={fetchTheses}
                     />
-                )}
+                </ProtectedRoute>
+            )}
 
             {(activePage === 'users' || activePage === 'accounts') && currentUser?.role === 'ADMIN' && (
                 <AccountsPage
@@ -277,32 +458,42 @@ function App() {
             )}
 
             {activePage === 'profile' && (
-                currentUser?.role === 'STUDENT' ? (
-                    <StudentProfilePage
-                        currentUser={currentUser}
-                        onNavigate={handleNavigate}
-                        onLogout={handleLogout}
-                    />
-                ) : (
-                    <ProfilePage
-                        currentUser={currentUser}
-                        onNavigate={handleNavigate}
-                        onLogout={handleLogout}
-                    />
-                )
+                <ProtectedRoute
+                    isAllowed={!!currentUser}
+                    onDenied={() => {
+                        window.location.replace('/');
+                    }}
+                >
+                    {currentUser?.role === 'STUDENT' ? (
+                        <StudentProfilePage
+                            currentUser={currentUser}
+                            onNavigate={handleNavigate}
+                            onLogout={handleLogout}
+                        />
+                    ) : (
+                        <ProfilePage
+                            currentUser={currentUser}
+                            onNavigate={handleNavigate}
+                            onLogout={handleLogout}
+                        />
+                    )}
+                </ProtectedRoute>
             )}
 
             {activePage === 'about' && (
                 <AboutUsPage
                     onNavigate={handleNavigate}
                     currentUser={currentUser}
+                    onLoginClick={() => setShowAuthModal(true)}
                 />
             )}
 
             {showAuthModal && (
                 <AuthModal
+                    isOpen={showAuthModal}
                     onClose={() => setShowAuthModal(false)}
                     onLoginSuccess={handleLoginSuccess}
+                    API_BASE={API_BASE}
                 />
             )}
         </div>
