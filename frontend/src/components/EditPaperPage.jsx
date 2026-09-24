@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Upload as UploadIcon, CheckCircle2, ChevronDown } from 'lucide-react';
+import Navbar from './Navbar';
 
 const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
   const isAdmin = currentUser?.role === 'ADMIN';
@@ -110,129 +112,186 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#800000] font-sans relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-16">
-      <div
-        className="fixed inset-0 opacity-[0.04] pointer-events-none z-0"
-        style={{
-          backgroundImage: `radial-gradient(circle at 50% 50%, #800000 1px, transparent 1px)`,
-          backgroundSize: '28px 28px'
-        }}
+    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] font-sans relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
+      
+      {/* NAVBAR */}
+      <Navbar 
+        activePage="repository" 
+        onNavigate={onNavigate} 
+        currentUser={currentUser} 
       />
 
-      <header className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between relative z-10">
-        <div onClick={() => onNavigate && onNavigate('home')} className="flex items-center space-x-2 cursor-pointer">
-          <span className="text-3xl font-black tracking-wider uppercase font-serif text-[#800000]">SIYASAT</span>
-        </div>
-
-        <div className="flex items-center space-x-1 bg-[#EFECE6]/80 backdrop-blur-md rounded-full px-4 py-1.5 border border-gray-200 shadow-xs text-xs font-semibold text-gray-700">
-          <button onClick={() => onNavigate && onNavigate('home')} className="px-5 py-1.5 rounded-full hover:text-[#800000] cursor-pointer">Home</button>
-          <button onClick={() => onNavigate && onNavigate('repository')} className="px-5 py-1.5 rounded-full bg-[#F5B842] text-[#800000] font-bold shadow-xs cursor-pointer">Repository</button>
-          {isElevatedUser && (
-            <button onClick={() => onNavigate && onNavigate('upload')} className="px-5 py-1.5 rounded-full hover:text-[#800000] cursor-pointer">Upload</button>
-          )}
-          {isAdmin && (
-            <button onClick={() => onNavigate && onNavigate('users')} className="px-5 py-1.5 rounded-full hover:text-[#800000] cursor-pointer">Accounts</button>
-          )}
-          <button onClick={() => onNavigate && onNavigate('about')} className="px-5 py-1.5 rounded-full hover:text-[#800000] cursor-pointer">About Us</button>
-        </div>
-
-        <div>
-          {currentUser ? (
-            <button onClick={() => onNavigate && onNavigate('profile')} className="w-10 h-10 rounded-full bg-[#F5B842] text-white font-bold text-lg flex items-center justify-center shadow-sm cursor-pointer hover:opacity-90">
-              {currentUser?.full_name ? currentUser.full_name.charAt(0).toUpperCase() : 'A'}
-            </button>
-          ) : (
-            <button onClick={() => onNavigate && onNavigate('login')} className="px-5 py-1.5 bg-[#800000] text-white rounded-full text-xs font-bold cursor-pointer hover:bg-[#660000]">
-              Log In
-            </button>
-          )}
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-6 pt-4 relative z-10">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-[#800000] text-center tracking-tight mb-8">
+      {/* MAIN CONTENT */}
+      <main className="max-w-4xl mx-auto px-6 pt-4 relative z-10 space-y-8">
+        
+        {/* PAGE TITLE */}
+        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight font-serif">
           Edit Your Paper
         </h1>
 
-        <div className="bg-[#EFECE6]/40 border border-gray-200/80 rounded-3xl p-8 md:p-10 shadow-2xs relative">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
+        {/* FORM CONTAINER BOX */}
+        <div className="bg-[#FAF8F5]/90 backdrop-blur-sm border border-gray-200/90 rounded-3xl p-8 md:p-12 shadow-sm relative overflow-visible">
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* TITLE FIELD */}
+            <div className="relative">
               <input
                 type="text"
                 required
-                placeholder="Title"
+                id="edit-title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-[#800000]/60 text-[#800000] placeholder-[#800000]/70 focus:outline-none text-xs font-semibold bg-transparent"
+                placeholder=" "
+                className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent"
               />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="text"
-                required
-                placeholder="Author"
-                value={formData.author}
-                onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-[#800000]/60 text-[#800000] placeholder-[#800000]/70 focus:outline-none text-xs font-semibold bg-transparent"
-              />
-              <input
-                type="number"
-                required
-                placeholder="Year Accepted"
-                value={formData.year}
-                onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-[#800000]/60 text-[#800000] placeholder-[#800000]/70 focus:outline-none text-xs font-semibold bg-transparent"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <select
-                value={formData.department}
-                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-[#800000]/60 text-[#800000] focus:outline-none text-xs font-semibold bg-transparent"
+              <label 
+                htmlFor="edit-title" 
+                className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
               >
-                <option value="Land and Water Resources Engineering">Land and Water Resources Engineering</option>
-                <option value="Farm Power and Machinery Engineering">Farm Power and Machinery Engineering</option>
-                <option value="Agricultural Structures and Environmental Control Engineering">Agricultural Structures and Environmental Control Engineering</option>
-                <option value="Agricultural and Biosystems Processing Engineering (Post-Harvest)">Agricultural and Biosystems Processing Engineering (Post-Harvest)</option>
-                <option value="Agricultural Informatics and Automation">Agricultural Informatics and Automation</option>
-              </select>
-
-              <input
-                type="text"
-                placeholder="Keywords"
-                value={formData.keywords}
-                onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-[#800000]/60 text-[#800000] placeholder-[#800000]/70 focus:outline-none text-xs font-semibold bg-transparent"
-              />
+                Title
+              </label>
             </div>
 
-            <div>
+            {/* AUTHOR & YEAR ACCEPTED */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  id="edit-author"
+                  value={formData.author}
+                  onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                  placeholder=" "
+                  className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent"
+                />
+                <label 
+                  htmlFor="edit-author" 
+                  className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
+                >
+                  Author
+                </label>
+              </div>
+
+              <div className="relative">
+                <input
+                  type="number"
+                  required
+                  id="edit-year"
+                  value={formData.year}
+                  onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                  placeholder=" "
+                  className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent"
+                />
+                <label 
+                  htmlFor="edit-year" 
+                  className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
+                >
+                  Year Accepted
+                </label>
+              </div>
+            </div>
+
+            {/* BRANCH & KEYWORDS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="relative">
+                <select
+                  id="edit-branch"
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent appearance-none cursor-pointer"
+                >
+                  <option value="Land and Water Resources Engineering">Land and Water Resources Engineering</option>
+                  <option value="Farm Power and Machinery Engineering">Farm Power and Machinery Engineering</option>
+                  <option value="Agricultural Structures and Environmental Control Engineering">Agricultural Structures and Environmental Control Engineering</option>
+                  <option value="Agricultural and Biosystems Processing Engineering (Post-Harvest)">Agricultural and Biosystems Processing Engineering (Post-Harvest)</option>
+                  <option value="Agricultural Informatics and Automation">Agricultural Informatics and Automation</option>
+                </select>
+                <label 
+                  htmlFor="edit-branch" 
+                  className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all pointer-events-none"
+                >
+                  Department
+                </label>
+                <ChevronDown className="w-4 h-4 text-gray-500 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+              </div>
+
+              <div className="relative">
+                <input
+                  type="text"
+                  id="edit-keywords"
+                  value={formData.keywords}
+                  onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
+                  placeholder=" "
+                  className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent"
+                />
+                <label 
+                  htmlFor="edit-keywords" 
+                  className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
+                >
+                  Keywords
+                </label>
+              </div>
+            </div>
+
+            {/* ABSTRACT TEXTAREA */}
+            <div className="relative">
               <textarea
                 required
                 rows={8}
-                placeholder="Abstract"
+                id="edit-abstract"
                 value={formData.abstract}
                 onChange={(e) => setFormData({ ...formData, abstract: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg border border-[#800000]/60 text-[#800000] placeholder-[#800000]/70 focus:outline-none text-xs font-semibold bg-transparent resize-none"
+                placeholder=" "
+                className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-medium bg-transparent resize-none leading-relaxed"
               />
+              <label 
+                htmlFor="edit-abstract" 
+                className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
+              >
+                Abstract
+              </label>
+
+              {/* SUCCESS POPUP OVERLAY INSIDE ABSTRACT / FORM */}
+              {showSuccessModal && (
+                <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-xl border border-gray-300 flex flex-col items-center justify-center p-6 text-center shadow-lg z-30 space-y-4 animate-in fade-in">
+                  <CheckCircle2 className="w-10 h-10 text-[#800000]" />
+                  <p className="text-[#800000] text-sm md:text-base font-extrabold tracking-tight">
+                    You have successfully edited your paper!
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSuccessModal(false);
+                      if (onNavigate) onNavigate('repository');
+                    }}
+                    className="px-10 py-2 bg-[#F5B842] hover:bg-[#e0a635] text-[#800000] font-extrabold text-xs rounded-full border border-[#d99e2b] shadow-xs cursor-pointer transition-all"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
             </div>
 
-            <div className="relative flex items-center justify-between px-4 py-2.5 rounded-lg border border-[#800000]/60 bg-transparent text-[#800000]">
-              <span className="text-xs font-semibold text-[#800000]/80">
-                {file ? `Queued for replacement: ${file.name}` : (paper?.file_path || paper?.filePath ? 'PDF Attached (Click icon to replace)' : 'Attach PDF File (Max 25MB)')}
-              </span>
-              <label className="cursor-pointer">
-                <svg className="w-4 h-4 text-[#800000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={(e) => setFile(e.target.files[0])}
-                  className="hidden"
-                />
+            {/* FILE UPLOAD FIELD */}
+            <div className="relative">
+              <div className="w-full px-4 py-3.5 rounded-xl border border-gray-400/80 flex items-center justify-between bg-transparent">
+                <span className="text-xs font-semibold text-gray-700 truncate">
+                  {file ? `Queued for replacement: ${file.name}` : (paper?.file_path || paper?.filePath ? 'PDF Attached (Click icon to replace)' : 'Attach PDF File (Max 25MB)')}
+                </span>
+                <label className="cursor-pointer flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg border border-gray-300 transition-all">
+                  <UploadIcon className="w-3.5 h-3.5 text-[#800000]" />
+                  <span className="text-xs font-bold text-[#800000]">Browse</span>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) => setFile(e.target.files[0])}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              <label className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000]">
+                File Upload
               </label>
             </div>
 
@@ -242,10 +301,11 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
               </div>
             )}
 
+            {/* SUBMIT BUTTON */}
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2.5 bg-[#F5B842] hover:bg-[#e0a635] text-[#800000] font-extrabold text-sm rounded-lg border border-[#d99e2b] shadow-2xs cursor-pointer transition-all disabled:opacity-50 flex justify-center items-center gap-2"
+              className="w-full py-3.5 bg-[#F5B842] hover:bg-[#e0a635] text-[#800000] font-extrabold text-sm rounded-xl border border-[#d99e2b] shadow-xs cursor-pointer transition-all disabled:opacity-50 flex justify-center items-center gap-2"
             >
               {isSubmitting ? (
                 <>
@@ -258,25 +318,6 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
               ) : 'Save Edits'}
             </button>
           </form>
-
-          {showSuccessModal && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-2xs rounded-3xl flex items-center justify-center p-4 z-30">
-              <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center max-w-sm w-full shadow-2xl space-y-5">
-                <p className="text-[#800000] text-sm font-bold leading-relaxed">
-                  You have successfully edited your paper!
-                </p>
-                <button
-                  onClick={() => {
-                    setShowSuccessModal(false);
-                    if (onNavigate) onNavigate('repository');
-                  }}
-                  className="px-10 py-1.5 bg-[#F5B842] hover:bg-[#e0a635] text-[#800000] font-bold text-xs rounded-lg border border-[#d99e2b] shadow-xs cursor-pointer"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </main>
     </div>
