@@ -686,7 +686,7 @@ const HomePage = ({
           }
           if (onNavigate) onNavigate('home');
         }}
-        API_BASE={(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}
+        API_BASE={'https://siyasat-backend.onrender.com/api'}
       />
     </div>
   );

@@ -178,7 +178,7 @@ const RepositoryPage = ({
     setAiError(null);
 
     try {
-      const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}/analyze-gaps`, {
+      const res = await fetch('https://siyasat-backend.onrender.com/api/analyze-gaps', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -10,7 +10,7 @@ import ProfilePage from './components/ProfilePage';
 import AboutUsPage from './components/AboutUsPage';
 import AuthModal from './components/AuthModal';
 
-const API_BASE = (process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api';
+const API_BASE = 'https://siyasat-backend.onrender.com/api';
 
 const ProtectedRoute = ({ isAllowed, redirectPath = 'home', children, onDenied, setCurrentPage, setShowAuthModal, currentUser }) => {
     useEffect(() => {
@@ -132,7 +132,7 @@ function App() {
 
     const fetchTheses = async () => {
         try {
-            const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}/theses`);
+            const res = await fetch('https://siyasat-backend.onrender.com/api/theses');
             if (!res.ok) throw new Error('Failed to fetch theses');
             const data = await res.json();
 
@@ -153,7 +153,7 @@ function App() {
         if (!token) return;
 
         try {
-            const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}/admin/users`, {
+            const res = await fetch('https://siyasat-backend.onrender.com/api/admin/users', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -291,7 +291,7 @@ function App() {
         }
 
         try {
-            const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}/theses/${paperId}`, {
+            const res = await fetch(`https://siyasat-backend.onrender.com/api/theses/${paperId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -320,7 +320,7 @@ function App() {
         }
 
         try {
-            const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}/admin/users/${userId}/role`, {
+            const res = await fetch(`https://siyasat-backend.onrender.com/api/admin/users/${userId}/role`, {
                 method: 'PUT',
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -349,7 +349,7 @@ function App() {
         }
 
         try {
-            const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}/admin/users/${userId}/status`, {
+            const res = await fetch(`https://siyasat-backend.onrender.com/api/admin/users/${userId}/status`, {
                 method: 'PUT',
                 headers: {
                     Authorization: `Bearer ${token}`,

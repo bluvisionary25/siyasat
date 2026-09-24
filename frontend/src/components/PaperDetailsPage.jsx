@@ -43,7 +43,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
     setAiGaps([]);
 
     try {
-      const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}/analyze-single-gap`, {
+      const res = await fetch('https://siyasat-backend.onrender.com/api/analyze-single-gap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -72,7 +72,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
     setDownloading(true);
     try {
       const targetId = p.id || p.thesis_id || p._id;
-      let downloadUrl = targetId ? `${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}/theses/${targetId}/download` : null;
+      let downloadUrl = targetId ? `https://siyasat-backend.onrender.com/api/theses/${targetId}/download` : null;
       let blob = null;
 
       if (downloadUrl) {
@@ -83,7 +83,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
       }
 
       if (!blob) {
-        const genRes = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}/theses/generate-pdf`, {
+        const genRes = await fetch('https://siyasat-backend.onrender.com/api/theses/generate-pdf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
