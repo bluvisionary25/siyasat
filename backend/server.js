@@ -7,11 +7,16 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'siyasat_super_secret_key_2026';
 const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+
+const supabaseUrl = process.env.SUPABASE_URL || 'https://lgvmnemfuietnoeqgnro.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || 'dummy_key';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 console.log("Groq Key Loaded:", process.env.GROQ_API_KEY ? "YES (starts with " + process.env.GROQ_API_KEY.substring(0, 8) + ")" : "NO - KEY MISSING");
 
@@ -92,14 +97,7 @@ pool.connect(async (err, client, release) => {
 // -----------------------------------------------------------------------------
 // Multer File Upload Setup (PDF only, 25MB max)
 // -----------------------------------------------------------------------------
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`);
-  }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -238,10 +236,30 @@ app.post('/api/users/profile-picture', authenticateToken, imageUpload.single('pr
     if (!req.file) {
       return res.status(400).json({ message: 'No image uploaded' });
     }
-    const normalizedPath = req.file.path.replace(/\\/g, '/');
+    
+    let publicUrl = '';
+    const fileName = `profiles/${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`;
+    const { data, error } = await supabase.storage
+      .from('siyasat-repository')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
+      
+    if (error) {
+      console.error('Supabase profile picture upload error:', error);
+      return res.status(500).json({ message: 'Failed to upload profile picture to storage.' });
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('siyasat-repository')
+      .getPublicUrl(data.path);
+      
+    publicUrl = publicUrlData.publicUrl;
+
     const updateRes = await pool.query(
       'UPDATE users SET profile_image = $1 WHERE id = $2 RETURNING id, full_name, email, role, profile_image',
-      [normalizedPath, req.user.id]
+      [publicUrl, req.user.id]
     );
     if (updateRes.rows.length === 0) {
       return res.status(404).json({ message: 'User not found.' });
@@ -529,7 +547,26 @@ app.post('/api/theses', authenticateToken, upload.single('file'), async (req, re
       }
     }
 
-    const normalizedPath = req.file.path.replace(/\\/g, '/');
+    // Supabase Upload
+    let publicUrl = '';
+    const fileName = `${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`;
+    const { data, error } = await supabase.storage
+      .from('siyasat-repository')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
+      
+    if (error) {
+      console.error('Supabase upload error:', error);
+      return res.status(500).json({ message: 'Failed to upload file to storage.' });
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('siyasat-repository')
+      .getPublicUrl(data.path);
+      
+    publicUrl = publicUrlData.publicUrl;
 
     const existingRes = await pool.query('SELECT * FROM theses');
     const clusterResult = computeSimilarityAndCluster({ title, abstract, keywords }, existingRes.rows);
@@ -546,7 +583,7 @@ app.post('/api/theses', authenticateToken, upload.single('file'), async (req, re
       parseInt(year, 10) || new Date().getFullYear(),
       keywords || '',
       department || 'Department of Agricultural and Biosystems Engineering',
-      normalizedPath,
+      publicUrl,
       req.user.id,
       clusterResult.cluster_group,
       clusterResult.similarity_score,
@@ -587,9 +624,27 @@ app.put('/api/theses/:id', authenticateToken, upload.single('file'), async (req,
     ];
 
     if (req.file) {
-      const normalizedPath = req.file.path.replace(/\\/g, '/');
+      const fileName = `${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`;
+      const { data, error } = await supabase.storage
+        .from('siyasat-repository')
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: false
+        });
+        
+      if (error) {
+        console.error('Supabase update upload error:', error);
+        return res.status(500).json({ message: 'Failed to update file in storage.' });
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('siyasat-repository')
+        .getPublicUrl(data.path);
+        
+      const publicUrl = publicUrlData.publicUrl;
+      
       query += `, file_path = $10 WHERE id = $11 RETURNING *;`;
-      values.push(normalizedPath, req.params.id);
+      values.push(publicUrl, req.params.id);
     } else {
       query += ` WHERE id = $10 RETURNING *;`;
       values.push(req.params.id);
@@ -619,12 +674,25 @@ app.delete('/api/theses/:id', authenticateToken, async (req, res) => {
     
     // Attempt to delete associated file
     if (result.rows[0].file_path) {
-      const fs = require('fs');
-      if (fs.existsSync(result.rows[0].file_path)) {
+      const filePath = result.rows[0].file_path;
+      if (filePath.startsWith('http')) {
         try {
-          fs.unlinkSync(result.rows[0].file_path);
-        } catch (fileErr) {
-          console.error('Failed to delete associated PDF file:', fileErr);
+          const url = new URL(filePath);
+          const pathParts = url.pathname.split('/siyasat-repository/');
+          if (pathParts.length > 1) {
+            await supabase.storage.from('siyasat-repository').remove([pathParts[1]]);
+          }
+        } catch (err) {
+          console.error('Failed to delete associated file from Supabase:', err);
+        }
+      } else {
+        const fs = require('fs');
+        if (fs.existsSync(filePath)) {
+          try {
+            fs.unlinkSync(filePath);
+          } catch (fileErr) {
+            console.error('Failed to delete associated PDF file locally:', fileErr);
+          }
         }
       }
     }
@@ -755,6 +823,10 @@ app.get('/api/theses/:id/download', async (req, res) => {
     }
 
     if (thesis && thesis.file_path) {
+      if (thesis.file_path.startsWith('http')) {
+        return res.redirect(thesis.file_path + '?download=');
+      }
+
       const absolutePath = path.resolve(__dirname, thesis.file_path);
       if (fs.existsSync(absolutePath)) {
         const downloadName = (thesis.title || 'Thesis')
