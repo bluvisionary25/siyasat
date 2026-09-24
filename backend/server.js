@@ -14,6 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'siyasat_super_secret_key_2026';
 const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+const OPENALEX_API_KEY = process.env.OPENALEX_API_KEY || 'upPzlnpgpo59ZgCVh351FG';
 
 const supabaseUrl = process.env.SUPABASE_URL || 'https://lgvmnemfuietnoeqgnro.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || 'dummy_key';
@@ -988,9 +989,10 @@ Output JSON only, with no markdown code blocks or additional conversational text
         
         try {
           const searchUrl = `https://api.openalex.org/works?search=${encodeURIComponent(gap.search_query)}&filter=type:article,is_retracted:false&per_page=3&sort=relevance_score:desc`;
+          console.log(`OpenAlex Fetch URL: ${searchUrl}`);
           const searchRes = await fetch(searchUrl, {
             headers: {
-              'User-Agent': 'SIYASAT-AcademicRepo/1.0 (mailto:admin@clsu.edu.ph)'
+              'Authorization': `Bearer ${OPENALEX_API_KEY}`
             },
             signal: controller.signal
           });
@@ -999,13 +1001,33 @@ Output JSON only, with no markdown code blocks or additional conversational text
           if (searchRes.ok) {
             const searchData = await searchRes.json();
             const items = searchData?.results || [];
-            online_references = items.map(item => ({
-              title: item.display_name || item.title || "Scholarly Publication",
-              authors: item.authorships?.slice(0, 3).map(a => a.author?.display_name).filter(Boolean).join(", ") || "Academic Researchers",
-              year: item.publication_year || "Recent",
-              journal: item.primary_location?.source?.display_name || "Peer-Reviewed Journal",
-              doi_url: item.doi || item.primary_location?.landing_page_url || item.open_access?.oa_url || null
-            })).filter(ref => ref.doi_url && ref.doi_url.startsWith('http'));
+            if (items.length === 0) {
+              online_references = [{
+                title: "No related external references found...",
+                authors: "N/A",
+                year: "",
+                journal: "",
+                doi_url: null
+              }];
+            } else {
+              online_references = items.map(item => ({
+                title: item.display_name || item.title || "Scholarly Publication",
+                authors: item.authorships?.slice(0, 3).map(a => a.author?.display_name).filter(Boolean).join(", ") || "Academic Researchers",
+                year: item.publication_year || "Recent",
+                journal: item.primary_location?.source?.display_name || "Peer-Reviewed Journal",
+                doi_url: item.doi || item.primary_location?.landing_page_url || item.open_access?.oa_url || null
+              })).filter(ref => ref.doi_url && ref.doi_url.startsWith('http'));
+              
+              if (online_references.length === 0) {
+                online_references = [{
+                  title: "No related external references found...",
+                  authors: "N/A",
+                  year: "",
+                  journal: "",
+                  doi_url: null
+                }];
+              }
+            }
           }
         } catch (err) {
           if (err.name === 'AbortError') {
