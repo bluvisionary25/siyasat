@@ -43,8 +43,8 @@ const UploadForm = ({ onUploadSuccess }) => {
   };
 
   return (
-    <section id="upload-section" className="py-20 px-6 md:px-12 max-w-5xl mx-auto relative z-10">
-      <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-3xl p-8 sm:p-12 shadow-lg relative">
+    <section id="upload-section" className="w-full py-20 px-4 sm:px-6 md:px-8 max-w-5xl mx-auto relative z-10">
+      <div className="w-full bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-3xl p-6 sm:p-8 md:p-12 shadow-lg relative mx-auto">
         <h2 className="text-2xl sm:text-3xl font-extrabold text-[#7A0C0E] text-center font-sans tracking-tight mb-8">
           Upload Your Paper
         </h2>
@@ -386,7 +386,7 @@ const HomePage = ({
         </div>
 
         {/* HERO CONTENT */}
-        <div className="max-w-4xl mx-auto text-center relative z-10 px-6 pt-4 pb-12 space-y-6">
+        <div className="w-full max-w-4xl mx-auto text-center relative z-10 px-4 sm:px-6 md:px-8 pt-4 pb-12 space-y-6">
 
 
           <div className="flex justify-center mb-2">
@@ -431,7 +431,7 @@ const HomePage = ({
       </section>
 
       {/* ------------------ 2. DEPARTMENT PILLARS SECTION ------------------ */}
-      <section id="about" className="py-16 sm:py-20 px-6 md:px-12 max-w-7xl mx-auto relative z-10">
+      <section id="about" className="w-full py-16 sm:py-20 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-1.5">
           <p className="text-xs sm:text-sm font-extrabold tracking-[0.2em] text-[#7A0C0E] uppercase font-sans">
             THE DEPARTMENT OF
@@ -442,13 +442,13 @@ const HomePage = ({
         </div>
 
         {/* 4 Tall Balanced Cards with Gold Outlined Icons & Refined Typography */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
           {infoCards.map((card) => {
             const IconComponent = card.icon;
             return (
               <div
                 key={card.title}
-                className="bg-white/95 backdrop-blur-sm border border-gray-100 rounded-2xl p-6 sm:p-8 text-center shadow-md hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col items-center"
+                className="w-full bg-white/95 backdrop-blur-sm border border-gray-100 rounded-2xl p-6 sm:p-8 text-center shadow-md hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col items-center mx-auto"
               >
                 {/* Outlined Gold Vector Icon */}
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 bg-[#FAF4EA] border border-[#E59819]/20 shadow-xs">
@@ -486,7 +486,7 @@ const HomePage = ({
         {/* Full Viewport Maroon Body */}
         <section
           id="repository"
-          className="bg-[#7A0C0E] text-white py-14 px-6 md:px-12 relative"
+          className="w-full bg-[#7A0C0E] text-white py-14 px-4 sm:px-6 md:px-8 relative"
         >
           {/* Subtle dark gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-[#6e0b0d] via-[#7A0C0E] to-[#60080a] opacity-95 pointer-events-none" />
@@ -517,7 +517,7 @@ const HomePage = ({
             </div>
 
             {/* 4 Featured Research Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pt-2">
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 pt-2">
               {displayedTheses.map((p, idx) => (
                 <div
                   key={p.id || p._id || idx}
@@ -525,7 +525,7 @@ const HomePage = ({
                     if (onSelectPaper) onSelectPaper(p);
                     if (onNavigate) onNavigate('paper-details');
                   }}
-                  className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-6 flex flex-col justify-between hover:bg-white/15 cursor-pointer transition-all duration-300 shadow-md group hover:-translate-y-1"
+                  className="w-full bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-6 flex flex-col justify-between hover:bg-white/15 cursor-pointer transition-all duration-300 shadow-md group hover:-translate-y-1 mx-auto"
                 >
                   <div>
                     <span className="inline-block bg-white/20 text-white text-[11px] font-bold px-3 py-1 rounded-full mb-3 tracking-wide">
@@ -591,7 +591,7 @@ const HomePage = ({
       {/* Upload Form removed from Home Page as per requirements. Users should use /upload route. */}
 
       {/* ------------------ 5. MULTI-COLUMN FOOTER WITH WATERMARK ------------------ */}
-      <footer className="relative overflow-hidden pt-20 pb-0 px-6 md:px-12 bg-gradient-to-b from-[#F7EBEB]/90 via-[#E4A5A5]/80 to-[#A73739]">
+      <footer className="w-full relative overflow-hidden pt-20 pb-0 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-[#F7EBEB]/90 via-[#E4A5A5]/80 to-[#A73739]">
         {/* Content Container positioned safely above watermark */}
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 mb-10 sm:mb-16 relative z-10">
           <div>
