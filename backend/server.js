@@ -915,7 +915,7 @@ async function generateAiGaps({ id, title, abstract, department, keywords, pdf_t
 
   const prompt = `Act as a senior academic research advisor in ${deptName}.
 Analyze the given thesis abstract and full text (if available) against department context to identify 2 to 3 substantive, high-impact research gaps.
-Additionally, you MUST extract and return the References/Bibliography as part of the structured JSON response. Find the references section at the end of the provided text and return them as an array of strings.
+Additionally, you MUST return a JSON object containing exactly two keys: `gaps` (array of objects) and `references` (array of strings). Do not omit the references key. Find the references section at the end of the provided text and return them as an array of strings.
 For each gap, output:
 - gap_title: Concise, technical gap heading.
 - description: Explicit breakdown of the unaddressed variable, methodological limitation, or parameter boundary.
@@ -926,7 +926,7 @@ Current Paper:
 Title: ${paperTitle}
 Abstract: ${paperAbstract}
 Keywords: ${keywords || 'None'}
-Full Text: ${pdfText.substring(0, 15000)} // Providing a large chunk including the end for references.
+Full Text: ${pdfText.slice(-10000)} // Providing a large chunk including the end for references.
 
 Local Department Context (Recent Theses):
 ${JSON.stringify(relatedDataset)}
@@ -947,7 +947,7 @@ Return strictly a valid JSON object matching exactly this schema:
       ]
     }
   ],
-  "extracted_references": [
+  "references": [
     "String (Full reference text)"
   ]
 }
@@ -1027,7 +1027,7 @@ Output JSON only, with no markdown code blocks or additional conversational text
     }));
     return {
       gaps: enrichedGaps,
-      extracted_references: parsed.extracted_references || []
+      extracted_references: parsed.references || parsed.extracted_references || []
     };
   }
 

@@ -382,10 +382,9 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
 
                   </div>
                 ))}
-                
-                {aiReferences && aiReferences.length > 0 && (
-                  <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-2xs mt-4">
-                    <h4 className="text-sm font-extrabold text-[#800000] mb-3">Extracted References / Bibliography</h4>
+                <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-2xs mt-4">
+                  <h4 className="text-sm font-extrabold text-[#800000] mb-3">Extracted References</h4>
+                  {aiReferences && aiReferences.length > 0 ? (
                     <ul className="list-disc pl-5 space-y-2">
                       {aiReferences.map((ref, idx) => (
                         <li key={idx} className="text-xs text-gray-700 leading-relaxed">
@@ -393,8 +392,10 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
                         </li>
                       ))}
                     </ul>
-                  </div>
-                )}
+                  ) : (
+                    <p className="text-xs text-gray-500 italic">No references extracted.</p>
+                  )}
+                </div>
               </div>
             )}
 
