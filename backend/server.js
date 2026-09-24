@@ -916,7 +916,7 @@ async function generateAiGaps({ id, title, abstract, department, keywords, pdf_t
 
   const prompt = `Act as a senior academic research advisor in ${deptName}.
 Analyze the given thesis abstract and full text (if available) against department context to identify 2 to 3 substantive, high-impact research gaps.
-Additionally, you MUST return a JSON object containing exactly two keys: `gaps` (array of objects) and `references` (array of strings). Do not omit the references key. Find the references section at the end of the provided text and return them as an array of strings.
+Additionally, you MUST return a JSON object containing exactly two keys: "gaps" (array of objects) and "references" (array of strings). Do not omit the references key. Find the references section at the end of the provided text and return them as an array of strings.
 For each gap, output:
 - gap_title: Concise, technical gap heading.
 - description: Explicit breakdown of the unaddressed variable, methodological limitation, or parameter boundary.
