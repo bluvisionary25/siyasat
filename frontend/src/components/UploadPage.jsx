@@ -62,7 +62,7 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] font-sans relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
+    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000]  relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
       
       {/* NAVBAR */}
       <Navbar 
@@ -75,7 +75,7 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
       <main className="max-w-4xl mx-auto px-6 pt-4 relative z-10 space-y-8">
         
         {/* PAGE TITLE */}
-        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight font-serif">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight ">
           Upload Your Paper
         </h1>
 

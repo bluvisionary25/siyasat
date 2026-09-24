@@ -3,7 +3,7 @@ import Navbar from './Navbar';
 
 const AboutUsPage = ({ onNavigate, currentUser, onLoginClick }) => {
   return (
-    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] font-sans relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
+    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000]  relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
       
       {/* NAVBAR */}
       <Navbar 
@@ -21,14 +21,14 @@ const AboutUsPage = ({ onNavigate, currentUser, onLoginClick }) => {
           <p className="text-sm font-extrabold text-[#800000] tracking-wide">
             The Department of
           </p>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] font-serif tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000]  tracking-tight">
             Agricultural and Biosystems Engineering
           </h1>
         </div>
 
         {/* MISSION SECTION */}
         <section className="space-y-3">
-          <h2 className="text-xl font-extrabold text-[#800000] font-serif">
+          <h2 className="text-xl font-extrabold text-[#800000] ">
             Mission
           </h2>
           <p className="text-xs md:text-sm text-gray-700 leading-relaxed font-medium">
@@ -38,7 +38,7 @@ const AboutUsPage = ({ onNavigate, currentUser, onLoginClick }) => {
 
         {/* OBJECTIVES SECTION */}
         <section className="space-y-3">
-          <h2 className="text-xl font-extrabold text-[#800000] font-serif">
+          <h2 className="text-xl font-extrabold text-[#800000] ">
             Objectives
           </h2>
           <ul className="space-y-2 text-xs md:text-sm text-gray-700 leading-relaxed font-medium pl-2">
@@ -63,32 +63,32 @@ const AboutUsPage = ({ onNavigate, currentUser, onLoginClick }) => {
 
         {/* AREAS OF SPECIALIZATION SECTION */}
         <section className="space-y-6">
-          <h2 className="text-xl font-extrabold text-[#800000] font-serif">
+          <h2 className="text-xl font-extrabold text-[#800000] ">
             Areas of Specialization
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             
             <div className="bg-[#FAF8F5]/90 border border-gray-200/80 rounded-3xl p-8 text-center flex items-center justify-center shadow-2xs hover:shadow-sm transition-all min-h-[140px]">
-              <h3 className="text-base font-extrabold text-[#800000] leading-snug font-serif">
+              <h3 className="text-base font-extrabold text-[#800000] leading-snug ">
                 AB Machinery and<br />Power Engineering
               </h3>
             </div>
 
             <div className="bg-[#FAF8F5]/90 border border-gray-200/80 rounded-3xl p-8 text-center flex items-center justify-center shadow-2xs hover:shadow-sm transition-all min-h-[140px]">
-              <h3 className="text-base font-extrabold text-[#F5B842] leading-snug font-serif">
+              <h3 className="text-base font-extrabold text-[#F5B842] leading-snug ">
                 AB Land and Water<br />Resources Engineering
               </h3>
             </div>
 
             <div className="bg-[#FAF8F5]/90 border border-gray-200/80 rounded-3xl p-8 text-center flex items-center justify-center shadow-2xs hover:shadow-sm transition-all min-h-[140px]">
-              <h3 className="text-base font-extrabold text-[#F5B842] leading-snug font-serif">
+              <h3 className="text-base font-extrabold text-[#F5B842] leading-snug ">
                 AB Structures and<br />Environment Engineering
               </h3>
             </div>
 
             <div className="bg-[#FAF8F5]/90 border border-gray-200/80 rounded-3xl p-8 text-center flex items-center justify-center shadow-2xs hover:shadow-sm transition-all min-h-[140px]">
-              <h3 className="text-base font-extrabold text-[#800000] leading-snug font-serif">
+              <h3 className="text-base font-extrabold text-[#800000] leading-snug ">
                 AB Process<br />Engineering
               </h3>
             </div>
@@ -105,7 +105,7 @@ const AboutUsPage = ({ onNavigate, currentUser, onLoginClick }) => {
 
         {/* CREATORS SECTION */}
         <section className="space-y-4 pt-4 border-t border-gray-200/50 mt-8 pb-8">
-          <h2 className="text-xl font-extrabold text-[#800000] font-serif text-center">
+          <h2 className="text-xl font-extrabold text-[#800000]  text-center">
             Creators
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-center max-w-3xl mx-auto">

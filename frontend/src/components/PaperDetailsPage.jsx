@@ -138,7 +138,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] font-sans relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
+    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000]  relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
       
       {/* NAVBAR */}
       <Navbar 
@@ -165,7 +165,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
           
           {/* TOP BAR WITH TITLE & ADMIN ACTIONS */}
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-            <h1 className="text-xl md:text-2xl font-extrabold text-[#800000] leading-snug font-serif">
+            <h1 className="text-xl md:text-2xl font-extrabold text-[#800000] leading-snug ">
               {p.title}
             </h1>
 
@@ -218,7 +218,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
 
           {/* ABSTRACT */}
           <div className="space-y-2">
-            <h3 className="text-sm font-extrabold text-[#800000] font-serif">Abstract</h3>
+            <h3 className="text-sm font-extrabold text-[#800000] ">Abstract</h3>
             <p className="text-xs md:text-sm text-gray-700 leading-relaxed font-medium justify-text">
               {p.abstract}
             </p>
@@ -270,7 +270,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-extrabold text-[#800000] font-serif">AI Gap Analysis Report</h3>
+                <h3 className="text-lg font-extrabold text-[#800000] ">AI Gap Analysis Report</h3>
                 <p className="text-xs font-semibold text-gray-600 line-clamp-1">{p.title}</p>
               </div>
             </div>

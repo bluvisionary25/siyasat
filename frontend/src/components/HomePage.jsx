@@ -45,7 +45,7 @@ const UploadForm = ({ onUploadSuccess }) => {
   return (
     <section id="upload-section" className="w-full py-20 px-4 sm:px-6 md:px-8 max-w-5xl mx-auto relative z-10">
       <div className="w-full bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-3xl p-6 sm:p-8 md:p-12 shadow-lg relative mx-auto">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#7A0C0E] text-center font-sans tracking-tight mb-8">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#7A0C0E] text-center  tracking-tight mb-8">
           Upload Your Paper
         </h2>
 
@@ -359,7 +359,7 @@ const HomePage = ({
 
   return (
     <div
-      className="min-h-screen font-sans text-gray-800 antialiased selection:bg-[#7A0C0E] selection:text-white relative overflow-x-hidden"
+      className="min-h-screen  text-gray-800 antialiased selection:bg-[#7A0C0E] selection:text-white relative overflow-x-hidden"
       style={{
         backgroundColor: '#FDFBF7',
         backgroundImage: `url(${bgLight})`,
@@ -392,11 +392,11 @@ const HomePage = ({
           <div className="flex justify-center mb-2">
             <SiyasatLogo variant="white" size="lg" />
           </div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[42px] font-extrabold tracking-tight leading-tight max-w-3xl mx-auto font-sans drop-shadow-sm text-white">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[42px] font-extrabold tracking-tight leading-tight max-w-3xl mx-auto  drop-shadow-sm text-white">
             A Research and Thesis Repository with AI Gap Analysis Tool
           </h1>
 
-          <p className="text-xs sm:text-sm md:text-base font-semibold text-[#E59819] tracking-wider uppercase font-sans">
+          <p className="text-xs sm:text-sm md:text-base font-semibold text-[#E59819] tracking-wider uppercase ">
             CLSU Department of Agricultural and Biosystems Engineering
           </p>
 
@@ -433,10 +433,10 @@ const HomePage = ({
       {/* ------------------ 2. DEPARTMENT PILLARS SECTION ------------------ */}
       <section id="about" className="w-full py-16 sm:py-20 px-4 sm:px-6 md:px-8 max-w-7xl mx-auto relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-1.5">
-          <p className="text-xs sm:text-sm font-extrabold tracking-[0.2em] text-[#7A0C0E] uppercase font-sans">
+          <p className="text-xs sm:text-sm font-extrabold tracking-[0.2em] text-[#7A0C0E] uppercase ">
             THE DEPARTMENT OF
           </p>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#7A0C0E] font-sans tracking-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#7A0C0E]  tracking-tight">
             Agricultural and Biosystems Engineering
           </h2>
         </div>
@@ -454,7 +454,7 @@ const HomePage = ({
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 bg-[#FAF4EA] border border-[#E59819]/20 shadow-xs">
                   <IconComponent className="w-8 h-8 text-[#E59819] stroke-[1.75]" />
                 </div>
-                <h3 className="text-lg font-extrabold text-[#7A0C0E] mb-3 font-sans tracking-tight">
+                <h3 className="text-lg font-extrabold text-[#7A0C0E] mb-3  tracking-tight">
                   {card.title}
                 </h3>
                 <p className="text-xs sm:text-[13px] text-gray-600 leading-relaxed font-normal">
@@ -494,7 +494,7 @@ const HomePage = ({
           <div className="max-w-6xl mx-auto relative z-10 space-y-10">
             {/* Search Header */}
             <div className="text-center max-w-2xl mx-auto space-y-5">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold font-sans tracking-tight">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold  tracking-tight">
                 Research and Thesis Repository
               </h2>
               <form onSubmit={handleSearchSubmit} className="relative max-w-lg mx-auto">
@@ -531,13 +531,13 @@ const HomePage = ({
                     <span className="inline-block bg-white/20 text-white text-[11px] font-bold px-3 py-1 rounded-full mb-3 tracking-wide">
                       {p.department || p.branch || 'Branch A'}
                     </span>
-                    <h4 className="text-xs sm:text-sm font-bold leading-snug mb-2 line-clamp-3 text-white group-hover:text-[#E59819] transition-colors font-sans">
+                    <h4 className="text-xs sm:text-sm font-bold leading-snug mb-2 line-clamp-3 text-white group-hover:text-[#E59819] transition-colors ">
                       {p.title}
                     </h4>
-                    <p className="text-[11px] text-white/75 italic mb-3 font-sans">
+                    <p className="text-[11px] text-white/75 italic mb-3 ">
                       by {p.author || p.authors}
                     </p>
-                    <p className="text-[11px] text-white/80 leading-relaxed line-clamp-3 font-sans font-light">
+                    <p className="text-[11px] text-white/80 leading-relaxed line-clamp-3  font-light">
                       {p.abstract}
                     </p>
                   </div>
@@ -595,22 +595,22 @@ const HomePage = ({
         {/* Content Container positioned safely above watermark */}
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 mb-10 sm:mb-16 relative z-10">
           <div>
-            <h3 className="text-xl font-bold text-[#7A0C0E] mb-1 font-sans tracking-tight">
+            <h3 className="text-xl font-bold text-[#7A0C0E] mb-1  tracking-tight">
               SIYASAT
             </h3>
             <p className="text-xs font-semibold text-[#7A0C0E]/90 mb-3">
               Department of Agricultural and Biosystems Engineering
             </p>
-            <p className="text-xs sm:text-sm text-[#7A0C0E]/85 font-normal leading-relaxed max-w-sm font-sans">
+            <p className="text-xs sm:text-sm text-[#7A0C0E]/85 font-normal leading-relaxed max-w-sm ">
               Central Luzon State University's institutional repository for Agricultural and Biosystems Engineering research, facilitating automated thematic clustering and AI-powered literature gap exploration.
             </p>
           </div>
 
           <div className="md:text-center">
-            <h3 className="text-xl font-bold text-[#7A0C0E] mb-3 font-sans tracking-tight">
+            <h3 className="text-xl font-bold text-[#7A0C0E] mb-3  tracking-tight">
               Quick Links
             </h3>
-            <ul className="text-xs sm:text-sm text-[#7A0C0E]/85 space-y-1.5 font-normal font-sans inline-block text-left">
+            <ul className="text-xs sm:text-sm text-[#7A0C0E]/85 space-y-1.5 font-normal  inline-block text-left">
               <li
                 onClick={() => onNavigate && onNavigate('home')}
                 className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all"
@@ -639,10 +639,10 @@ const HomePage = ({
           </div>
 
           <div className="md:text-right">
-            <h3 className="text-xl font-bold text-[#7A0C0E] mb-3 font-sans tracking-tight">
+            <h3 className="text-xl font-bold text-[#7A0C0E] mb-3  tracking-tight">
               Contact Us
             </h3>
-            <ul className="text-xs sm:text-sm text-[#7A0C0E]/85 space-y-1.5 font-normal font-sans inline-block text-left md:text-right">
+            <ul className="text-xs sm:text-sm text-[#7A0C0E]/85 space-y-1.5 font-normal  inline-block text-left md:text-right">
               <li>
                 <a href="mailto:bsabe@clsu.edu.ph" className="hover:text-[#7A0C0E] hover:font-semibold transition-all">bsabe@clsu.edu.ph</a>
               </li>
@@ -663,7 +663,7 @@ const HomePage = ({
 
         {/* Giant Watermark Typography ("SIYASAT") across the bottom */}
         <div className="relative z-0 w-full overflow-hidden flex justify-center items-end select-none pointer-events-none -mb-2 sm:-mb-4 md:-mb-6">
-          <span className="text-[17vw] font-black text-white/30 tracking-tight font-sans leading-none whitespace-nowrap drop-shadow-xs">
+          <span className="text-[17vw] font-black text-white/30 tracking-tight  leading-none whitespace-nowrap drop-shadow-xs">
             SIYASAT
           </span>
         </div>

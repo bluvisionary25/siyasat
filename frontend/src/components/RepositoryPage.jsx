@@ -213,7 +213,7 @@ const RepositoryPage = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] font-sans relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
+    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000]  relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
 
       {/* NAVBAR */}
       <Navbar
@@ -227,7 +227,7 @@ const RepositoryPage = ({
       <main className="max-w-7xl mx-auto px-6 pt-2 relative z-10 space-y-6">
 
         {/* PAGE TITLE */}
-        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight font-serif">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight ">
           Research and Thesis Repository
         </h1>
 
@@ -575,7 +575,7 @@ const RepositoryPage = ({
           <div className="lg:col-span-5 bg-[#FAF8F5]/90 border border-gray-200/90 rounded-3xl p-5 shadow-xs max-h-[750px] overflow-y-auto space-y-4">
 
             {/* PANEL HEADER PILL */}
-            <div className="bg-[#E8E2D9] text-[#800000] font-extrabold text-xs text-center py-2.5 rounded-full shadow-2xs font-serif tracking-wide flex items-center justify-center space-x-2">
+            <div className="bg-[#E8E2D9] text-[#800000] font-extrabold text-xs text-center py-2.5 rounded-full shadow-2xs  tracking-wide flex items-center justify-center space-x-2">
               <Sparkles className="w-4 h-4 text-[#800000]" />
               <span>Analyze Gaps</span>
             </div>
