@@ -34,7 +34,7 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
     if (forceUpload) uploadData.append('ignoreDuplicate', 'true');
 
     try {
-      const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api')}/theses`, {
+      const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}/theses`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`

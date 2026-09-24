@@ -80,7 +80,7 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
     }
 
     try {
-      const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api')}/theses/${paperId}`, {
+      const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}/theses/${paperId}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` },
         body: updateData

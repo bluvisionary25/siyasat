@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import SiyasatLogo from './SiyasatLogo';
 
-const AuthModal = ({ isOpen = true, onClose, onLoginSuccess, API_BASE = (process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api') }) => {
+const AuthModal = ({ isOpen = true, onClose, onLoginSuccess, API_BASE = (process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api' }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,10 +17,8 @@ const AuthModal = ({ isOpen = true, onClose, onLoginSuccess, API_BASE = (process
     setSuccessMsg('');
     setIsLoading(true);
 
-    const baseUrl = process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api';
-    // Ensure we don't end up with /api/api/auth/login or missing segments
-    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-    const endpoint = cleanBaseUrl.endsWith('/api') ? `${cleanBaseUrl}/auth/login` : `${cleanBaseUrl}/api/auth/login`;
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com';
+    const endpoint = `${API_BASE_URL}/api/auth/login`;
     const payload = { email, password };
 
     try {

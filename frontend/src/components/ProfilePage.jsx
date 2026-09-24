@@ -21,7 +21,7 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout }) => {
 
   useEffect(() => {
     if (currentUser?.id) {
-      fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api')}/theses?uploaded_by=${currentUser.id}`)
+      fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}/theses?uploaded_by=${currentUser.id}`)
         .then(res => res.json())
         .then(data => {
           if (data.theses) setUserWorks(data.theses);
@@ -39,7 +39,7 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout }) => {
 
       try {
         const token = localStorage.getItem('siyasat_token') || sessionStorage.getItem('siyasat_token');
-        const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com/api')}/users/profile-picture`, {
+        const res = await fetch(`${(process.env.REACT_APP_API_URL || 'https://siyasat-backend.onrender.com') + '/api'}/users/profile-picture`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
