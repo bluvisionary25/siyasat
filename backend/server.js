@@ -8,6 +8,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
+const pdfParse = require('pdf-parse');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -883,10 +884,11 @@ app.post('/api/theses/generate-pdf', (req, res) => {
 });
 
 // 6. AI Research Gap Analysis Tool Routes
-async function generateAiGaps({ id, title, abstract, department, keywords }) {
+async function generateAiGaps({ id, title, abstract, department, keywords, pdf_text }) {
   const deptName = department || 'Agricultural and Biosystems Engineering';
   const paperTitle = title || 'Research Study';
   const paperAbstract = abstract || '';
+  const pdfText = pdf_text || '';
 
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
@@ -912,7 +914,8 @@ async function generateAiGaps({ id, title, abstract, department, keywords }) {
   }
 
   const prompt = `Act as a senior academic research advisor in ${deptName}.
-Analyze the given thesis abstract against department context to identify 2 to 3 substantive, high-impact research gaps.
+Analyze the given thesis abstract and full text (if available) against department context to identify 2 to 3 substantive, high-impact research gaps.
+Additionally, you MUST extract and return the References/Bibliography as part of the structured JSON response. Find the references section at the end of the provided text and return them as an array of strings.
 For each gap, output:
 - gap_title: Concise, technical gap heading.
 - description: Explicit breakdown of the unaddressed variable, methodological limitation, or parameter boundary.
@@ -923,6 +926,7 @@ Current Paper:
 Title: ${paperTitle}
 Abstract: ${paperAbstract}
 Keywords: ${keywords || 'None'}
+Full Text: ${pdfText.substring(0, 15000)} // Providing a large chunk including the end for references.
 
 Local Department Context (Recent Theses):
 ${JSON.stringify(relatedDataset)}
@@ -942,6 +946,9 @@ Return strictly a valid JSON object matching exactly this schema:
         }
       ]
     }
+  ],
+  "extracted_references": [
+    "String (Full reference text)"
   ]
 }
 Output JSON only, with no markdown code blocks or additional conversational text.`;
@@ -1018,7 +1025,10 @@ Output JSON only, with no markdown code blocks or additional conversational text
         online_references
       };
     }));
-    return enrichedGaps;
+    return {
+      gaps: enrichedGaps,
+      extracted_references: parsed.extracted_references || []
+    };
   }
 
   throw new Error('Groq API returned an invalid JSON schema.');
@@ -1027,8 +1037,8 @@ Output JSON only, with no markdown code blocks or additional conversational text
 app.post('/api/analyze-gaps', async (req, res) => {
   try {
     const { id, title, abstract, department, keywords } = req.body;
-    const gaps = await generateAiGaps({ id, title, abstract, department, keywords });
-    res.json({ success: true, message: 'Hybrid AI Research Gap Analysis complete', gaps });
+    const result = await generateAiGaps({ id, title, abstract, department, keywords });
+    res.json({ success: true, message: 'Hybrid AI Research Gap Analysis complete', gaps: result.gaps, extracted_references: result.extracted_references });
   } catch (err) {
     console.error('AI Analysis Error:', err);
     res.status(500).json({ success: false, message: 'Failed to generate AI Research Gap Report.' });
@@ -1130,8 +1140,30 @@ app.post('/api/analyze-single-gap', async (req, res) => {
     }
 
     const { id, title, abstract, department, keywords } = req.body;
-    const gaps = await generateAiGaps({ id, title, abstract, department, keywords });
-    res.json({ success: true, message: 'Hybrid AI Research Gap Analysis complete', gaps });
+    let pdfText = '';
+    
+    if (id && id !== -1) {
+      try {
+        const thesisRes = await pool.query('SELECT * FROM theses WHERE id = $1', [id]);
+        if (thesisRes.rows.length > 0) {
+          const thesis = thesisRes.rows[0];
+          if (thesis.file_path && thesis.file_path.startsWith('http')) {
+            const pdfResponse = await fetch(thesis.file_path);
+            if (pdfResponse.ok) {
+              const arrayBuffer = await pdfResponse.arrayBuffer();
+              const buffer = Buffer.from(arrayBuffer);
+              const pdfData = await pdfParse(buffer);
+              pdfText = pdfData.text;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing PDF from Supabase in single-gap:', e);
+      }
+    }
+
+    const result = await generateAiGaps({ id, title, abstract, department, keywords, pdf_text: pdfText });
+    res.json({ success: true, message: 'Hybrid AI Research Gap Analysis complete', gaps: result.gaps, extracted_references: result.extracted_references });
   } catch (err) {
     console.error('AI Analysis Error:', err);
     res.status(500).json({ success: false, message: 'Failed to generate AI Research Gap Report.' });
@@ -1150,12 +1182,30 @@ app.post('/api/theses/:id/analyze-gap', authenticateToken, async (req, res) => {
     }
 
     const thesis = thesisRes.rows[0];
-    const gaps = await generateAiGaps({
+    let pdfText = '';
+    if (thesis.file_path && thesis.file_path.startsWith('http')) {
+      try {
+        const pdfResponse = await fetch(thesis.file_path);
+        if (pdfResponse.ok) {
+          const arrayBuffer = await pdfResponse.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const pdfData = await pdfParse(buffer);
+          pdfText = pdfData.text;
+        }
+      } catch (e) {
+        console.error('Error parsing PDF from Supabase:', e);
+      }
+    }
+
+    const result = await generateAiGaps({
       title: thesis.title,
       abstract: thesis.abstract,
       department: thesis.department,
-      keywords: thesis.keywords
+      keywords: thesis.keywords,
+      pdf_text: pdfText
     });
+    
+    const gaps = result.gaps;
 
     const identifiedGaps = gaps.map((g, i) => `${i + 1}. ${g.title}: ${g.desc}`).join('\n');
     const futureRecommendations = `1. Integrate IoT sensor telemetry with low-power LoRaWAN networks.\n2. Develop solar-powered edge hardware modules.\n3. Conduct multi-seasonal field trials across regional agro-climatic zones.`;
@@ -1166,7 +1216,7 @@ app.post('/api/theses/:id/analyze-gap', authenticateToken, async (req, res) => {
       future_recommendations: futureRecommendations
     };
 
-    res.json({ success: true, message: 'AI Analysis complete', gaps, report });
+    res.json({ success: true, message: 'AI Analysis complete', gaps, extracted_references: result.extracted_references, report });
   } catch (err) {
     console.error('AI Analysis Error:', err);
     res.status(500).json({ success: false, message: 'Failed to generate AI Research Gap Report.' });

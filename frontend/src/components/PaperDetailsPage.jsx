@@ -17,6 +17,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
   const [showAiModal, setShowAiModal] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiGaps, setAiGaps] = useState([]);
+  const [aiReferences, setAiReferences] = useState([]);
   const [aiError, setAiError] = useState(null);
   const [openPaperAccordionId, setOpenPaperAccordionId] = useState(null);
 
@@ -41,6 +42,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
     setIsAnalyzing(true);
     setAiError(null);
     setAiGaps([]);
+    setAiReferences([]);
 
     try {
       const res = await fetch('https://siyasat-backend.onrender.com/api/analyze-single-gap', {
@@ -57,6 +59,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
       const data = await res.json();
       if (res.ok && data.gaps && Array.isArray(data.gaps) && data.gaps.length > 0) {
         setAiGaps(data.gaps);
+        setAiReferences(data.extracted_references || []);
       } else {
         setAiError(data.message || 'AI could not generate gaps for this paper.');
       }
@@ -379,6 +382,19 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
 
                   </div>
                 ))}
+                
+                {aiReferences && aiReferences.length > 0 && (
+                  <div className="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-2xs mt-4">
+                    <h4 className="text-sm font-extrabold text-[#800000] mb-3">Extracted References / Bibliography</h4>
+                    <ul className="list-disc pl-5 space-y-2">
+                      {aiReferences.map((ref, idx) => (
+                        <li key={idx} className="text-xs text-gray-700 leading-relaxed">
+                          {ref}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 
