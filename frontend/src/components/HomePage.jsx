@@ -661,11 +661,10 @@ const HomePage = ({
           </p>
         </div>
 
-        {/* Giant Watermark Typography ("SIYASAT") across the bottom */}
-        <div className="relative z-0 w-full overflow-hidden flex justify-center items-end select-none pointer-events-none -mb-2 sm:-mb-4 md:-mb-6">
-          <span className="text-[17vw] font-black text-white/30 tracking-tight  leading-none whitespace-nowrap drop-shadow-xs">
+        <div className="w-full mt-8">
+          <h1 className="text-[15vw] font-black uppercase leading-none text-center w-full text-white/20 select-none pointer-events-none">
             SIYASAT
-          </span>
+          </h1>
         </div>
       </footer>
 

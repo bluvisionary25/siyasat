@@ -392,29 +392,27 @@ const RepositoryPage = ({
                       {paper.abstract}
                     </p>
                     <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                      {currentUser?.role !== 'ADMIN' && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAnalyzePaperGaps(paper);
-                          }}
-                          disabled={isAnalyzing}
-                          className="px-4 py-1.5 bg-[#F5B842] hover:bg-[#e0a635] text-[#800000] font-extrabold text-xs rounded-full flex items-center space-x-1.5 cursor-pointer shadow-2xs transition-all disabled:opacity-50"
-                        >
-                          {isAnalyzing && selectedPaperForAi?.title === paper.title ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 text-[#800000] animate-spin" />
-                              <span>Analyzing...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="w-3.5 h-3.5 text-[#800000]" />
-                              <span>AI Analyze Gaps</span>
-                            </>
-                          )}
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAnalyzePaperGaps(paper);
+                        }}
+                        disabled={isAnalyzing}
+                        className="px-4 py-1.5 bg-[#F5B842] hover:bg-[#e0a635] text-[#800000] font-extrabold text-xs rounded-full flex items-center space-x-1.5 cursor-pointer shadow-2xs transition-all disabled:opacity-50"
+                      >
+                        {isAnalyzing && selectedPaperForAi?.title === paper.title ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 text-[#800000] animate-spin" />
+                            <span>Analyzing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5 text-[#800000]" />
+                            <span>AI Analyze Gaps</span>
+                          </>
+                        )}
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => {

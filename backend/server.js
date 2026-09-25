@@ -1148,19 +1148,6 @@ ${JSON.stringify(dataset)}
 
 app.post('/api/analyze-single-gap', async (req, res) => {
   try {
-    const authHeader = req.headers['authorization'];
-    if (authHeader) {
-      const token = authHeader.split(' ')[1];
-      if (token) {
-        try {
-          const user = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_key');
-          if (user && user.role === 'ADMIN') {
-            return res.status(403).json({ success: false, message: 'AI Analysis feature is not available for Administrator accounts.' });
-          }
-        } catch (e) {}
-      }
-    }
-
     const { id, title, abstract, department, keywords } = req.body;
     let pdfText = '';
     
@@ -1194,10 +1181,6 @@ app.post('/api/analyze-single-gap', async (req, res) => {
 
 app.post('/api/theses/:id/analyze-gap', authenticateToken, async (req, res) => {
   try {
-    if (req.user && req.user.role === 'ADMIN') {
-      return res.status(403).json({ success: false, message: 'AI Analysis feature is not available for Administrator accounts.' });
-    }
-
     const thesisRes = await pool.query('SELECT * FROM theses WHERE id = $1', [req.params.id]);
     if (thesisRes.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Thesis record not found.' });

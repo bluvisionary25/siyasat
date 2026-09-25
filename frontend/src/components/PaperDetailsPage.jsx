@@ -7,7 +7,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
   const isAdmin = userRole === 'ADMIN';
   const isAdviser = userRole === 'ADVISER';
   const isStudent = userRole === 'STUDENT';
-  const canUseAi = !isAdmin;
+  const canUseAi = true;
   const isElevatedUser = isAdmin || isAdviser;
 
   const [downloading, setDownloading] = useState(false);
@@ -33,11 +33,6 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
   const p = paper || defaultPaper;
 
   const handleRunAiAnalysis = async () => {
-    if (isAdmin) {
-      alert('AI Gap Analysis is disabled for System Administrators.');
-      return;
-    }
-
     setShowAiModal(true);
     setIsAnalyzing(true);
     setAiError(null);
