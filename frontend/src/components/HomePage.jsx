@@ -661,8 +661,8 @@ const HomePage = ({
           </p>
         </div>
 
-        <div className="mt-10 w-full overflow-hidden h-[15vw] md:h-[12vw] flex items-start justify-center">
-          <h1 className="w-full text-center text-[25vw] md:text-[20vw] font-black uppercase leading-none text-white/20 select-none pointer-events-none whitespace-nowrap tracking-[-0.05em]">
+        <div className="mt-8 w-full max-w-7xl mx-auto overflow-hidden flex justify-center items-start h-[12vw] sm:h-[11vw] md:h-[11.5vw] xl:h-[145px]">
+          <h1 className="text-[22.5vw] sm:text-[22vw] md:text-[23.5vw] xl:text-[300px] font-black uppercase leading-none text-white/20 select-none pointer-events-none whitespace-nowrap tracking-tighter mt-[-1vw] xl:mt-[-12px]">
             SIYASAT
           </h1>
         </div>
