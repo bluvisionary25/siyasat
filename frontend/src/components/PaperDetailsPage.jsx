@@ -69,18 +69,19 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      const targetId = p.id || p.thesis_id || p._id;
-      let downloadUrl = targetId ? `https://siyasat-backend.onrender.com/api/theses/${targetId}/download` : null;
-      let blob = null;
-
-      if (downloadUrl) {
-        const response = await fetch(downloadUrl);
-        if (response.ok) {
-          blob = await response.blob();
+      if (p.file_path) {
+        let finalUrl = p.file_path;
+        if (finalUrl.includes('res.cloudinary.com')) {
+          finalUrl = finalUrl.replace('/upload/', '/upload/fl_attachment/');
         }
-      }
-
-      if (!blob) {
+        const a = document.createElement('a');
+        a.href = finalUrl;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
         const genRes = await fetch('https://siyasat-backend.onrender.com/api/theses/generate-pdf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -94,25 +95,22 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
           })
         });
         if (genRes.ok) {
-          blob = await genRes.blob();
+          const blob = await genRes.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const cleanTitle = (p.title || 'Research_Paper')
+            .replace(/[^a-zA-Z0-9\s-_]/g, '')
+            .trim()
+            .replace(/\s+/g, '_');
+          a.download = `${cleanTitle}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } else {
+          alert('Could not generate PDF. Please check server connection.');
         }
-      }
-
-      if (blob) {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const cleanTitle = (p.title || 'Research_Paper')
-          .replace(/[^a-zA-Z0-9\s-_]/g, '')
-          .trim()
-          .replace(/\s+/g, '_');
-        a.download = `${cleanTitle}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-      } else {
-        alert('Could not download PDF. Please check server connection.');
       }
     } catch (err) {
       console.error('Download error:', err);
