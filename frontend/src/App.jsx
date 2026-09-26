@@ -107,6 +107,27 @@ function App() {
     const [usersList, setUsersList] = useState([]);
 
     useEffect(() => {
+        const token = localStorage.getItem('siyasat_token');
+        if (token) {
+            fetch(`${API_BASE}/users/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.user) {
+                    localStorage.setItem('siyasat_user', JSON.stringify(data.user));
+                    setCurrentUser(data.user);
+                } else if (data.message === 'Invalid or expired token.') {
+                    localStorage.removeItem('siyasat_token');
+                    localStorage.removeItem('siyasat_user');
+                    setCurrentUser(null);
+                }
+            })
+            .catch(err => console.error('Failed to fetch user:', err));
+        }
+    }, []);
+
+    useEffect(() => {
         fetchTheses();
         const token = localStorage.getItem('siyasat_token');
         if (token && currentUser?.role === 'ADMIN') {

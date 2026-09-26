@@ -10,6 +10,12 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout, onUpdateUser }) => {
   const [profileImage, setProfileImage] = useState(() => {
     return currentUser?.profile_image || null;
   });
+
+  useEffect(() => {
+    if (currentUser?.profile_image) {
+      setProfileImage(currentUser.profile_image);
+    }
+  }, [currentUser?.profile_image]);
   
   const [userWorks, setUserWorks] = useState([]);
   const [loading, setLoading] = useState(true);

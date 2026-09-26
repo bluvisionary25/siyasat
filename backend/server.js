@@ -287,6 +287,23 @@ app.post('/api/users/profile-picture', authenticateToken, imageUpload.single('pr
   }
 });
 
+// 2.2 Get Current User
+app.get('/api/users/me', authenticateToken, async (req, res) => {
+  try {
+    const userRes = await pool.query(
+      'SELECT id, full_name, email, role, profile_image, status FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    res.json({ user: userRes.rows[0] });
+  } catch (err) {
+    console.error('Fetch User Error:', err);
+    res.status(500).json({ message: 'Failed to retrieve user.' });
+  }
+});
+
 // 3. Fetch Theses with Multi-Criteria Search & Filters (Publicly Accessible)
 app.get('/api/theses', async (req, res) => {
   const { q, year, sort, uploaded_by } = req.query;
