@@ -16,11 +16,19 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState(null);
   const [similarityScore, setSimilarityScore] = useState(0);
+  const [uploadError, setUploadError] = useState(null);
 
   const handleSubmit = async (e, forceUpload = false) => {
     if (e) e.preventDefault();
-    setIsSubmitting(true);
+    setUploadError(null);
     setDuplicateWarning(null);
+
+    if (file && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      setUploadError('Invalid file type. Please upload a PDF document.');
+      return;
+    }
+
+    setIsSubmitting(true);
 
     const token = localStorage.getItem('siyasat_token');
     const uploadData = new FormData();
@@ -51,11 +59,11 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
         if (onUploadSuccess) onUploadSuccess();
         setShowSuccessModal(true);
       } else {
-        alert(data.message || 'Upload failed.');
+        setUploadError(data.message || 'Upload failed.');
       }
     } catch (err) {
       console.error('Upload Error:', err);
-      alert('An error occurred during upload.');
+      setUploadError('An error occurred during upload.');
     } finally {
       setIsSubmitting(false);
     }
@@ -78,6 +86,12 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
         <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight ">
           Upload Your Paper
         </h1>
+
+        {uploadError && (
+          <div className="bg-red-50 text-red-600 p-3 rounded-xl border border-red-200 text-sm font-bold text-center animate-in fade-in">
+            {uploadError}
+          </div>
+        )}
 
         {/* FORM CONTAINER BOX */}
         <div className="bg-[#FAF8F5]/90 backdrop-blur-sm border border-gray-200/90 rounded-3xl p-8 md:p-12 shadow-sm relative overflow-visible">
@@ -235,8 +249,11 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
                   <span className="text-xs font-bold text-[#800000]">Browse</span>
                   <input
                     type="file"
-                    accept="application/pdf"
-                    onChange={(e) => setFile(e.target.files[0])}
+                    accept=".pdf,application/pdf"
+                    onChange={(e) => {
+                      setFile(e.target.files[0]);
+                      setUploadError(null);
+                    }}
                     className="hidden"
                   />
                 </label>

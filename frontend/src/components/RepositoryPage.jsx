@@ -64,6 +64,7 @@ const RepositoryPage = ({
   const [sortBy, setSortBy] = useState('latest');
   const [openCardMenuId, setOpenCardMenuId] = useState(null);
   const [paperToDelete, setPaperToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [viewMode, setViewMode] = useState('list');
   const [openFolderId, setOpenFolderId] = useState(null);
@@ -205,11 +206,19 @@ const RepositoryPage = ({
     }
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
     if (paperToDelete && onDeletePaper) {
-      onDeletePaper(paperToDelete);
+      const res = await onDeletePaper(paperToDelete);
+      if (res && res.success) {
+        setPaperToDelete(null);
+      } else if (!res) {
+        setPaperToDelete(null);
+      }
+    } else {
+      setPaperToDelete(null);
     }
-    setPaperToDelete(null);
+    setIsDeleting(false);
   };
 
   return (
@@ -761,17 +770,19 @@ const RepositoryPage = ({
             <div className="flex justify-center space-x-3 pt-2">
               <button
                 type="button"
+                disabled={isDeleting}
                 onClick={handleDeleteConfirm}
-                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-full cursor-pointer shadow-xs"
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-full cursor-pointer shadow-xs disabled:opacity-50"
               >
-                Delete
+                {isDeleting ? 'Deleting...' : 'Yes'}
               </button>
               <button
                 type="button"
+                disabled={isDeleting}
                 onClick={() => setPaperToDelete(null)}
-                className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-full cursor-pointer"
+                className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-full cursor-pointer disabled:opacity-50"
               >
-                Cancel
+                No
               </button>
             </div>
           </div>

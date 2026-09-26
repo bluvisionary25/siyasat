@@ -105,6 +105,12 @@ function App() {
     const [showAuthModal, setShowAuthModal] = useState(() => initialRoute.page === 'login');
     const [theses, setTheses] = useState([]);
     const [usersList, setUsersList] = useState([]);
+    const [toastMessage, setToastMessage] = useState(null);
+
+    const showToast = (msg) => {
+        setToastMessage(msg);
+        setTimeout(() => setToastMessage(null), 4000);
+    };
 
     useEffect(() => {
         const token = localStorage.getItem('siyasat_token');
@@ -307,8 +313,8 @@ function App() {
         }
 
         if (!paperId) {
-            alert('Cannot delete: Missing or invalid Paper ID.');
-            return;
+            showToast('Cannot delete: Missing or invalid Paper ID.');
+            return { success: false };
         }
 
         try {
@@ -323,13 +329,16 @@ function App() {
             if (res.ok) {
                 await fetchTheses();
                 setSelectedPaper(null);
+                return { success: true };
             } else {
                 const errData = await res.json();
-                alert(`Failed to delete thesis: ${errData.message || 'Database error'}`);
+                showToast(`Failed to delete thesis: ${errData.message || 'Database error'}`);
+                return { success: false };
             }
         } catch (err) {
             console.error('Error deleting paper:', err);
-            alert('Network error while attempting to delete paper.');
+            showToast('Network error while attempting to delete paper.');
+            return { success: false };
         }
     };
 
@@ -518,6 +527,12 @@ function App() {
                     onLoginSuccess={handleLoginSuccess}
                     API_BASE={API_BASE}
                 />
+            )}
+
+            {toastMessage && (
+                <div className="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-3 rounded-xl shadow-lg z-50 text-sm font-bold animate-in fade-in slide-in-from-bottom-5">
+                    {toastMessage}
+                </div>
             )}
         </div>
     );

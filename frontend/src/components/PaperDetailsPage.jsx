@@ -12,6 +12,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
 
   const [downloading, setDownloading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // AI Gap Analysis State
   const [showAiModal, setShowAiModal] = useState(false);
@@ -113,11 +114,19 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
   };
 
   const handleConfirmDelete = async () => {
+    setIsDeleting(true);
     if (onDeletePaper) {
-      await onDeletePaper(p.id);
+      const res = await onDeletePaper(p.id);
+      if (res && res.success) {
+        setShowDeleteModal(false);
+        onNavigate('repository');
+      } else if (!res) {
+        // fallback if res is not returned (e.g. from older code)
+        setShowDeleteModal(false);
+        onNavigate('repository');
+      }
     }
-    setShowDeleteModal(false);
-    onNavigate('repository');
+    setIsDeleting(false);
   };
 
   return (
@@ -415,17 +424,19 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
             <div className="flex justify-center space-x-3 pt-2">
               <button
                 type="button"
+                disabled={isDeleting}
                 onClick={handleConfirmDelete}
-                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-full cursor-pointer"
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-full cursor-pointer disabled:opacity-50"
               >
-                Delete
+                {isDeleting ? 'Deleting...' : 'Yes'}
               </button>
               <button
                 type="button"
+                disabled={isDeleting}
                 onClick={() => setShowDeleteModal(false)}
-                className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-full cursor-pointer"
+                className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-full cursor-pointer disabled:opacity-50"
               >
-                Cancel
+                No
               </button>
             </div>
           </div>
