@@ -936,6 +936,9 @@ async function generateAiGaps({ id, title, abstract, department, keywords, pdf_t
 
   const prompt = `Act as a senior academic research advisor in ${deptName}.
 Analyze the given thesis abstract and full text (if available) against department context to identify 2 to 3 substantive, high-impact research gaps.
+
+CRITICAL INSTRUCTION: If the provided abstract is a diagnostic test, random text, or non-scientific text (e.g., "test", "testing only"), explicitly state this and do not hallucinate gaps based on the title.
+
 Additionally, you MUST return a JSON object containing exactly two keys: "gaps" (array of objects) and "references" (array of strings). Do not omit the references key. Find the references section at the end of the provided text and return them as an array of strings.
 For each gap, output:
 - gap_title: Concise, technical gap heading.
@@ -1170,26 +1173,6 @@ app.post('/api/analyze-single-gap', async (req, res) => {
   try {
     const { id, title, abstract, department, keywords } = req.body;
     let pdfText = '';
-    
-    if (id && id !== -1) {
-      try {
-        const thesisRes = await pool.query('SELECT * FROM theses WHERE id = $1', [id]);
-        if (thesisRes.rows.length > 0) {
-          const thesis = thesisRes.rows[0];
-          if (thesis.file_path && thesis.file_path.startsWith('http')) {
-            const pdfResponse = await fetch(thesis.file_path);
-            if (pdfResponse.ok) {
-              const arrayBuffer = await pdfResponse.arrayBuffer();
-              const buffer = Buffer.from(arrayBuffer);
-              const pdfData = await pdfParse(buffer);
-              pdfText = pdfData.text;
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Error parsing PDF from Supabase in single-gap:', e);
-      }
-    }
 
     const result = await generateAiGaps({ id, title, abstract, department, keywords, pdf_text: pdfText });
     res.json({ success: true, message: 'Hybrid AI Research Gap Analysis complete', gaps: result.gaps, extracted_references: result.extracted_references });
