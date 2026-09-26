@@ -70,17 +70,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
     setDownloading(true);
     try {
       if (p.file_path) {
-        let finalUrl = p.file_path;
-        if (finalUrl.includes('res.cloudinary.com')) {
-          finalUrl = finalUrl.replace('/upload/', '/upload/fl_attachment/');
-        }
-        const a = document.createElement('a');
-        a.href = finalUrl;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        window.open(p.file_path, '_blank');
       } else {
         const genRes = await fetch('https://siyasat-backend.onrender.com/api/theses/generate-pdf', {
           method: 'POST',
