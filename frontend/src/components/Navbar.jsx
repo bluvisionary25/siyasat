@@ -149,7 +149,7 @@ const Navbar = ({
             title={currentUser.full_name || currentUser.email}
           >
             {currentUser.profile_image ? (
-              <img src={`https://siyasat-backend.onrender.com/${currentUser.profile_image}`} alt="Avatar" className="w-full h-full object-cover" />
+              <img src={currentUser.profile_image} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
               getInitial()
             )}

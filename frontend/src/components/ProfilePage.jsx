@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import Navbar from './Navbar';
 
-const ProfilePage = ({ onNavigate, currentUser, onLogout }) => {
+const ProfilePage = ({ onNavigate, currentUser, onLogout, onUpdateUser }) => {
   const isAdmin = currentUser?.role === 'ADMIN';
   const isAdviser = currentUser?.role === 'ADVISER';
   const isElevatedUser = isAdmin || isAdviser;
 
   const [profileImage, setProfileImage] = useState(() => {
-    return currentUser?.profile_image ? `https://siyasat-backend.onrender.com/${currentUser.profile_image}` : null;
+    return currentUser?.profile_image || null;
   });
   
   const [userWorks, setUserWorks] = useState([]);
@@ -62,7 +62,8 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout }) => {
         const data = await res.json();
         if (res.ok && data.user) {
           localStorage.setItem('siyasat_user', JSON.stringify(data.user));
-          window.location.reload();
+          setProfileImage(data.user.profile_image);
+          if (onUpdateUser) onUpdateUser(data.user);
         } else {
           console.error(data.message);
         }

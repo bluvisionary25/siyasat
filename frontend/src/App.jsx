@@ -469,12 +469,14 @@ function App() {
                             currentUser={currentUser}
                             onNavigate={handleNavigate}
                             onLogout={handleLogout}
+                            onUpdateUser={setCurrentUser}
                         />
                     ) : (
                         <ProfilePage
                             currentUser={currentUser}
                             onNavigate={handleNavigate}
                             onLogout={handleLogout}
+                            onUpdateUser={setCurrentUser}
                         />
                     )}
                 </ProtectedRoute>
