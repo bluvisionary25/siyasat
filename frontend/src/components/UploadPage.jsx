@@ -23,8 +23,13 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
     setUploadError(null);
     setDuplicateWarning(null);
 
-    if (file && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-      setUploadError('Invalid file type. Please upload a PDF document.');
+    if (!file) {
+      setUploadError('Please select a PDF file to upload.');
+      return;
+    }
+
+    if ((file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) || file.size > 25 * 1024 * 1024) {
+      setUploadError('File must be a PDF under 25MB.');
       return;
     }
 
@@ -50,7 +55,14 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
         body: uploadData
       });
 
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        setUploadError('File must be a PDF under 25MB or server rejected the request.');
+        setIsSubmitting(false);
+        return;
+      }
 
       if (res.status === 409) {
         setDuplicateWarning(data.message);
@@ -59,11 +71,10 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
         if (onUploadSuccess) onUploadSuccess();
         setShowSuccessModal(true);
       } else {
-        setUploadError(data.message || 'Upload failed.');
+        setUploadError(data.message || 'File must be a PDF under 25MB.');
       }
     } catch (err) {
-      console.error('Upload Error:', err);
-      setUploadError('An error occurred during upload.');
+      setUploadError('An error occurred during upload. File must be a PDF under 25MB.');
     } finally {
       setIsSubmitting(false);
     }
@@ -86,12 +97,6 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
         <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight ">
           Upload Your Paper
         </h1>
-
-        {uploadError && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-xl border border-red-200 text-sm font-bold text-center animate-in fade-in">
-            {uploadError}
-          </div>
-        )}
 
         {/* FORM CONTAINER BOX */}
         <div className="bg-[#FAF8F5]/90 backdrop-blur-sm border border-gray-200/90 rounded-3xl p-8 md:p-12 shadow-sm relative overflow-visible">
@@ -261,6 +266,11 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
               <label className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000]">
                 File Upload
               </label>
+              {uploadError && (
+                <span className="text-red-600 text-[10px] font-bold mt-1.5 ml-1 block animate-in fade-in">
+                  {uploadError}
+                </span>
+              )}
             </div>
 
             {/* SUBMIT BUTTON */}
