@@ -9,6 +9,26 @@ const path = require('path');
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 const pdfParse = require('pdf-parse');
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({ 
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'pjnv3ry1', 
+  api_key: process.env.CLOUDINARY_API_KEY || '568462394371771', 
+  api_secret: process.env.CLOUDINARY_API_SECRET || '9BXUK5YEmni6ytlnBl7eGQB0qxA'
+});
+
+const uploadToCloudinary = (buffer, options = {}) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      options,
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    uploadStream.end(buffer);
+  });
+};
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -241,23 +261,17 @@ app.post('/api/users/profile-picture', authenticateToken, imageUpload.single('pr
     
     let publicUrl = '';
     const fileName = `profiles/${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`;
-    const { data, error } = await supabase.storage
-      .from('siyasat-repository')
-      .upload(fileName, req.file.buffer, {
-        contentType: req.file.mimetype,
-        upsert: false
+    try {
+      const result = await uploadToCloudinary(req.file.buffer, {
+        folder: 'siyasat-repository/profiles',
+        public_id: fileName,
+        resource_type: 'image'
       });
-      
-    if (error) {
-      console.error('Supabase profile picture upload error:', error);
+      publicUrl = result.secure_url;
+    } catch (error) {
+      console.error('Cloudinary profile picture upload error:', error);
       return res.status(500).json({ message: 'Failed to upload profile picture to storage.' });
     }
-
-    const { data: publicUrlData } = supabase.storage
-      .from('siyasat-repository')
-      .getPublicUrl(data.path);
-      
-    publicUrl = publicUrlData.publicUrl;
 
     const updateRes = await pool.query(
       'UPDATE users SET profile_image = $1 WHERE id = $2 RETURNING id, full_name, email, role, profile_image',
@@ -549,26 +563,20 @@ app.post('/api/theses', authenticateToken, upload.single('file'), async (req, re
       }
     }
 
-    // Supabase Upload
+    // Cloudinary Upload
     let publicUrl = '';
     const fileName = `${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`;
-    const { data, error } = await supabase.storage
-      .from('siyasat-repository')
-      .upload(fileName, req.file.buffer, {
-        contentType: req.file.mimetype,
-        upsert: false
+    try {
+      const result = await uploadToCloudinary(req.file.buffer, {
+        folder: 'siyasat-repository',
+        public_id: fileName,
+        resource_type: 'auto'
       });
-      
-    if (error) {
-      console.error('Supabase upload error:', error);
+      publicUrl = result.secure_url;
+    } catch (error) {
+      console.error('Cloudinary upload error:', error);
       return res.status(500).json({ message: 'Failed to upload file to storage.' });
     }
-
-    const { data: publicUrlData } = supabase.storage
-      .from('siyasat-repository')
-      .getPublicUrl(data.path);
-      
-    publicUrl = publicUrlData.publicUrl;
 
     const existingRes = await pool.query('SELECT * FROM theses');
     const clusterResult = computeSimilarityAndCluster({ title, abstract, keywords }, existingRes.rows);
@@ -627,23 +635,18 @@ app.put('/api/theses/:id', authenticateToken, upload.single('file'), async (req,
 
     if (req.file) {
       const fileName = `${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`;
-      const { data, error } = await supabase.storage
-        .from('siyasat-repository')
-        .upload(fileName, req.file.buffer, {
-          contentType: req.file.mimetype,
-          upsert: false
+      let publicUrl = '';
+      try {
+        const result = await uploadToCloudinary(req.file.buffer, {
+          folder: 'siyasat-repository',
+          public_id: fileName,
+          resource_type: 'auto'
         });
-        
-      if (error) {
-        console.error('Supabase update upload error:', error);
+        publicUrl = result.secure_url;
+      } catch (error) {
+        console.error('Cloudinary update upload error:', error);
         return res.status(500).json({ message: 'Failed to update file in storage.' });
       }
-
-      const { data: publicUrlData } = supabase.storage
-        .from('siyasat-repository')
-        .getPublicUrl(data.path);
-        
-      const publicUrl = publicUrlData.publicUrl;
       
       query += `, file_path = $10 WHERE id = $11 RETURNING *;`;
       values.push(publicUrl, req.params.id);
