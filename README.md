@@ -15,6 +15,11 @@ Siyasat is a centralized thesis repository and AI analysis platform tailored for
 - **AI-Driven Research Gap Analysis:** Utilizes Groq's AI capabilities to analyze existing literature and identify potential research gaps.
 - **PDF Management:** Seamless uploading, storage, and retrieval of thesis documents.
 
+## Prerequisites
+Before you begin, ensure you have the following installed on your local machine:
+- [Node.js](https://nodejs.org/) (v16 or higher recommended)
+- [Git](https://git-scm.com/)
+
 ## Environment Variables
 To run this project locally, you will need to set up environment variables for both the frontend and backend.
 
@@ -38,14 +43,16 @@ CLOUDINARY_API_SECRET=your_cloudinary_api_secret_here
 GROQ_API_KEY=your_groq_api_key_here
 ```
 
+> **CRITICAL NOTE:** The database tables (e.g., `theses`) and Row Level Security (RLS) policies are not automatically generated. You must manually configure your tables and RLS policies in the Supabase dashboard for the application to function correctly.
+
 ## Local Installation
 
 Follow these steps to set up the project locally.
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/siyasat-system.git
-   cd siyasat-system
+   git clone https://github.com/siyasatdabe/Siyasat.git
+   cd Siyasat
    ```
 
 2. **Install Backend Dependencies:**
