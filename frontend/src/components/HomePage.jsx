@@ -612,19 +612,25 @@ const HomePage = ({
             </h3>
             <ul className="text-xs sm:text-sm text-[#7A0C0E]/85 space-y-1.5 font-normal  inline-block text-left">
               <li
-                onClick={() => onNavigate && onNavigate('home')}
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all"
               >
                 Home
               </li>
               <li
-                onClick={() => onNavigate && onNavigate('repository')}
+                onClick={() => {
+                  const section = document.getElementById('repository');
+                  if (section) section.scrollIntoView({ behavior: 'smooth' });
+                }}
                 className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all"
               >
                 Repository
               </li>
               <li
-                onClick={() => onNavigate && onNavigate('about')}
+                onClick={() => {
+                  const section = document.getElementById('about');
+                  if (section) section.scrollIntoView({ behavior: 'smooth' });
+                }}
                 className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all"
               >
                 About Us

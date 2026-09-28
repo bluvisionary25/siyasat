@@ -402,6 +402,10 @@ function App() {
 
     const activePage = String(currentPage).trim();
 
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activePage]);
+
     return (
         <div className="min-h-screen bg-[#FDFBF7]">
             {activePage === 'home' && (
