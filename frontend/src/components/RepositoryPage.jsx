@@ -930,7 +930,11 @@ const RepositoryPage = ({
             {!loadingClusterAnalysis && (
               <div className="p-4 sm:p-6 border-t bg-gray-50/50 flex justify-end">
                 <button
-                  onClick={() => setClusterAnalysisResult(null)}
+                  onClick={() => {
+                    setLoadingClusterAnalysis(false);
+                    setClusterAnalysisResult(null);
+                    setClusterAnalysisError(null);
+                  }}
                   className="px-6 py-2.5 bg-gray-900 hover:bg-black text-white font-bold text-sm rounded-xl transition-all shadow-md cursor-pointer"
                 >
                   Close Report
