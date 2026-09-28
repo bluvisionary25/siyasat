@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MoreVertical, Trash2, Edit3, ChevronDown, Sparkles, Loader2, BookOpen } from 'lucide-react';
+import { Search, MoreVertical, Trash2, Edit3, ChevronDown, Sparkles, Loader2, BookOpen, BrainCircuit } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import Navbar from './Navbar';
 
 const RepositoryPage = ({
@@ -77,7 +78,46 @@ const RepositoryPage = ({
 
   const [aiGaps, setAiGaps] = useState(null);
 
+  // Cluster Gap Analysis State
+  const [loadingClusterAnalysis, setLoadingClusterAnalysis] = useState(false);
+  const [clusterAnalysisResult, setClusterAnalysisResult] = useState(null);
+  const [clusterAnalysisError, setClusterAnalysisError] = useState(null);
 
+  const handleGenerateClusterGap = async (e, clusterName) => {
+    e.stopPropagation();
+    setLoadingClusterAnalysis(true);
+    setClusterAnalysisError(null);
+    setClusterAnalysisResult(null);
+
+    try {
+      const token = localStorage.getItem('siyasat_token');
+      // Using same origin URL pattern as other fetch requests in frontend
+      const baseUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:5000' 
+        : 'https://siyasat-backend.onrender.com';
+        
+      const res = await fetch(`${baseUrl}/api/analysis/cluster-gap`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ clusterGroup: clusterName })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setClusterAnalysisResult({ clusterName, markdown: data.markdown, globalReferences: data.globalReferences || [] });
+      } else {
+        setClusterAnalysisError(data.message || 'Failed to generate cluster gap analysis.');
+      }
+    } catch (err) {
+      console.error(err);
+      setClusterAnalysisError('An error occurred while communicating with the server.');
+    } finally {
+      setLoadingClusterAnalysis(false);
+    }
+  };
 
   const papersSource = thesesList;
 
@@ -469,7 +509,16 @@ const RepositoryPage = ({
                             </div>
                           </div>
                         </div>
-                        <ChevronDown className={`w-5 h-5 text-[#800000] transform transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                        <div className="flex items-center space-x-4">
+                          <button
+                            onClick={(e) => handleGenerateClusterGap(e, clusterName)}
+                            className="flex items-center gap-1.5 bg-[#800000]/10 hover:bg-[#800000]/20 text-[#800000] px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                          >
+                            <BrainCircuit className="w-3.5 h-3.5" />
+                            Generate Cluster Gap Analysis 🧠
+                          </button>
+                          <ChevronDown className={`w-5 h-5 text-[#800000] transform transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                        </div>
                       </div>
 
                       {isOpen && (
@@ -785,6 +834,109 @@ const RepositoryPage = ({
                 No
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* CLUSTER GAP ANALYSIS MODAL */}
+      {(loadingClusterAnalysis || clusterAnalysisResult || clusterAnalysisError) && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50/50">
+              <div className="flex items-center gap-3">
+                <BrainCircuit className="w-6 h-6 text-[#800000]" />
+                <h3 className="text-lg font-extrabold text-[#800000]">Cluster Gap Analysis Report</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setLoadingClusterAnalysis(false);
+                  setClusterAnalysisResult(null);
+                  setClusterAnalysisError(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Content Body */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 custom-scrollbar">
+              {loadingClusterAnalysis && (
+                <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                  <Loader2 className="w-10 h-10 text-[#800000] animate-spin" />
+                  <p className="text-sm font-extrabold text-[#800000]">Synthesizing folder data...</p>
+                  <p className="text-xs text-gray-500 font-medium">This may take a moment to evaluate the entire cluster.</p>
+                </div>
+              )}
+
+              {clusterAnalysisError && (
+                <div className="flex flex-col items-center justify-center py-10 space-y-3">
+                  <div className="bg-red-50 text-red-600 p-4 rounded-xl border border-red-200 text-sm font-bold text-center w-full max-w-md">
+                    {clusterAnalysisError}
+                  </div>
+                </div>
+              )}
+
+              {clusterAnalysisResult && (
+                <div className="prose prose-sm sm:prose max-w-none prose-headings:text-[#800000] prose-a:text-[#800000]">
+                  <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-xs">
+                    <p className="text-blue-900 text-xs sm:text-sm font-semibold">
+                      Analysis for Cluster: <span className="font-extrabold">{clusterAnalysisResult.clusterName}</span>
+                    </p>
+                  </div>
+                  
+                  <div className="markdown-body text-gray-800 text-sm leading-relaxed space-y-4">
+                    <ReactMarkdown>
+                      {clusterAnalysisResult.markdown}
+                    </ReactMarkdown>
+                  </div>
+
+                  {clusterAnalysisResult.globalReferences && clusterAnalysisResult.globalReferences.length > 0 && (
+                    <div className="mt-8 pt-6 border-t border-gray-200">
+                      <h4 className="text-sm font-extrabold text-[#800000] mb-4 flex items-center">
+                        <span className="mr-2">🌍</span> Global Literature (OpenAlex)
+                      </h4>
+                      <div className="space-y-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                        {clusterAnalysisResult.globalReferences.map((ref, refIdx) => (
+                          <div key={refIdx} className="bg-white p-2.5 rounded-lg border border-[#F5B842]/40 shadow-sm">
+                            <div className="flex items-start justify-between">
+                              <span className="text-[9px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded flex items-center">Verified Academic Publication</span>
+                              <span className="text-[9px] font-bold text-gray-500">{ref.year}</span>
+                            </div>
+                            <p className="text-[10px] font-bold mt-1 leading-snug text-gray-900">
+                              {ref.title}
+                            </p>
+                            <p className="text-[9px] text-gray-600 mt-1">
+                              {ref.authors} &mdash; <span className="italic">{ref.journal}</span>
+                            </p>
+                            {ref.doi_url && ref.doi_url !== "#" && (
+                              <div className="mt-2">
+                                <a href={ref.doi_url} target="_blank" rel="noopener noreferrer" className="text-[9px] font-bold text-blue-600 hover:underline">
+                                  View Published Study / DOI ↗
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            {!loadingClusterAnalysis && (
+              <div className="p-4 sm:p-6 border-t bg-gray-50/50 flex justify-end">
+                <button
+                  onClick={() => setClusterAnalysisResult(null)}
+                  className="px-6 py-2.5 bg-gray-900 hover:bg-black text-white font-bold text-sm rounded-xl transition-all shadow-md cursor-pointer"
+                >
+                  Close Report
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

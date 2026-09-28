@@ -1205,15 +1205,59 @@ app.post('/api/theses/:id/analyze-gap', authenticateToken, async (req, res) => {
       }
     }
 
-    const result = await generateAiGaps({
-      title: thesis.title,
-      abstract: thesis.abstract,
-      department: thesis.department,
-      keywords: thesis.keywords,
-      pdf_text: pdfText
+    const systemPrompt = `You are a senior thesis panelist and peer reviewer in Agricultural and Biosystems Engineering (ABE).
+Analyze this single thesis based strictly on its Title, Keywords, and Abstract. Identify the narrow constraints of the study and propose precise next-step extensions.
+
+OUTPUT FORMAT (Strict Markdown):
+### 🔬 Methodological Scope & Limitations
+[Identify the specific hardware, software, sensors, or methods used and their constraints].
+
+### 🌾 Boundary Constraints
+[Highlight the geographic, environmental, crop-specific, or lab-scale limits of this test].
+
+### 📚 Reference Scanned
+* [Insert the exact Title of the thesis you just analyzed]`;
+
+    const userMessageContent = `Title: ${thesis.title || 'N/A'}\nKeywords: ${thesis.keywords || 'N/A'}\nAbstract: ${thesis.abstract || 'N/A'}\nFull Text: ${pdfText.substring(0, 5000)}`;
+
+    const groqKey = process.env.GROQ_API_KEY;
+    if (!groqKey) {
+      return res.status(500).json({ success: false, message: 'AI processing key is missing.' });
+    }
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessageContent }
+        ],
+        temperature: 0.3
+      })
     });
-    
-    const gaps = result.gaps;
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Groq AI error response:', errText);
+      return res.status(response.status).json({ success: false, message: 'AI processing request failed.' });
+    }
+
+    const data = await response.json();
+    const markdownResult = data.choices[0].message.content;
+
+    // Package into the array format expected by the frontend without modifying frontend code
+    const gaps = [
+      {
+        id: 1,
+        title: "AI Analysis Report",
+        desc: markdownResult
+      }
+    ];
 
     const identifiedGaps = gaps.map((g, i) => `${i + 1}. ${g.title}: ${g.desc}`).join('\n');
     const futureRecommendations = `1. Integrate IoT sensor telemetry with low-power LoRaWAN networks.\n2. Develop solar-powered edge hardware modules.\n3. Conduct multi-seasonal field trials across regional agro-climatic zones.`;
@@ -1224,10 +1268,140 @@ app.post('/api/theses/:id/analyze-gap', authenticateToken, async (req, res) => {
       future_recommendations: futureRecommendations
     };
 
-    res.json({ success: true, message: 'AI Analysis complete', gaps, extracted_references: result.extracted_references, report });
+    res.json({ success: true, message: 'AI Analysis complete', gaps, extracted_references: [], report });
   } catch (err) {
     console.error('AI Analysis Error:', err);
     res.status(500).json({ success: false, message: 'Failed to generate AI Research Gap Report.' });
+  }
+});
+
+app.post('/api/analysis/cluster-gap', async (req, res) => {
+  try {
+    const { clusterGroup } = req.body;
+    if (!clusterGroup) {
+      return res.status(400).json({ success: false, message: 'clusterGroup is required.' });
+    }
+
+    const { data: theses, error } = await supabase
+      .from('theses')
+      .select('title, keywords, abstract')
+      .eq('cluster_group', clusterGroup)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Supabase query error:', error);
+      return res.status(500).json({ success: false, message: 'Database error fetching cluster theses.' });
+    }
+
+    if (!theses || theses.length < 2) {
+      return res.status(400).json({ success: false, message: 'Not enough data in this cluster to perform a gap analysis (requires at least 2 papers).' });
+    }
+
+    const userMessageContent = theses.map((paper, index) => {
+      return `Paper ${index + 1}: Title: ${paper.title || 'N/A'} | Keywords: ${paper.keywords || 'N/A'} | Abstract: ${paper.abstract || 'N/A'}`;
+    }).join('\n\n');
+
+    const systemPrompt = `You are a critical peer reviewer and expert panelist in Agricultural and Biosystems Engineering (ABE). 
+Your objective is to analyze a provided cluster of recent academic theses (titles, keywords, and abstracts) and identify highly specific, actionable research gaps for upcoming undergraduate and master's students.
+
+STRICT FORMATTING RULE:
+- DO NOT use markdown tables or pipes (|). 
+- Use standard Markdown bullet points, clean spacing, and bold labels only.
+- Synthesize the cluster as a whole; do NOT summarize papers individually.
+
+OUTPUT FORMAT (Strict Markdown):
+### 🔍 Thematic Saturation
+[Brief 2-sentence summary of the repetitive trends across these papers].
+
+### 🕳️ Identified Research Gaps
+* **Missing Variables:** [List specific ignored crops, livestock, soil types, or climate parameters]
+* **Methodological Blindspots:** [List outdated/overused tech and missing modern alternatives]
+* **Environmental & Scale Limitations:** [Highlight missing field-scale or real-world parameters]
+
+🔑 Global Search Query
+[Provide exactly ONE line containing 2 to 3 BROAD keywords based on the gaps (e.g. smart irrigation machine learning). Keep it broad to ensure high search volume. No quotes or extra text.]
+
+### 📚 Theses Referenced
+* [Paper 1 Title]
+* [Paper 2 Title]`;
+
+    const groqKey = process.env.GROQ_API_KEY;
+    if (!groqKey) {
+      return res.status(500).json({ success: false, message: 'AI processing key is missing.' });
+    }
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessageContent }
+        ],
+        temperature: 0.3
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Groq AI error response:', errText);
+      return res.status(response.status).json({ success: false, message: 'AI processing request failed.' });
+    }
+
+    const data = await response.json();
+    let aiResponse = data.choices[0].message.content;
+
+    // Extract the query
+    // This regex allows for optional '###', optional spaces, and ANY type of line break
+    const queryMatch = aiResponse.match(/🔑\s*Global Search Query\s*[\r\n]+([^\r\n]+)/i);
+    const searchQuery = queryMatch ? queryMatch[1].trim() : null;
+
+    let globalReferences = [];
+
+    if (searchQuery) {
+        try {
+            const openAlexUrl = `https://api.openalex.org/works?search=${encodeURIComponent(searchQuery)}&per_page=10&sort=publication_year:desc`;
+            
+            const response = await fetch(openAlexUrl);
+            const data = await response.json();
+            
+            if (data.results && data.results.length > 0) {
+                globalReferences = data.results.map(work => ({
+                    title: work.title || "Untitled Work",
+                    year: work.publication_year || "N/A",
+                    doi_url: work.doi || work.id || "#",
+                    authors: work.authorships && work.authorships.length > 0 
+                        ? work.authorships.map(a => a.author.display_name).join(', ')
+                        : 'Unknown Authors',
+                    journal: (work.primary_location && work.primary_location.source && work.primary_location.source.display_name) 
+                        ? work.primary_location.source.display_name 
+                        : 'Independent Publication'
+                }));
+                
+                // Delete everything from the "🔑" to the end of the AI's output
+                const rawQuerySection = aiResponse.substring(aiResponse.indexOf('🔑') - 4);
+                aiResponse = aiResponse.replace(rawQuerySection, '');
+            } else {
+                // No results, just delete the query block
+                const rawQuerySection = aiResponse.substring(aiResponse.indexOf('🔑') - 4);
+                aiResponse = aiResponse.replace(rawQuerySection, '');
+            }
+        } catch (error) {
+            console.error("OpenAlex Fetch Error:", error);
+            const rawQuerySection = aiResponse.substring(aiResponse.indexOf('🔑') - 4);
+            aiResponse = aiResponse.replace(rawQuerySection, '');
+        }
+    }
+
+    res.json({ success: true, markdown: aiResponse, globalReferences });
+  } catch (err) {
+    console.error('Cluster AI Analysis Error:', err);
+    res.status(500).json({ success: false, message: 'Failed to generate cluster gap analysis.' });
   }
 });
 
