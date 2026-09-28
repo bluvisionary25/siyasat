@@ -1320,21 +1320,37 @@ app.post('/api/analysis/cluster-gap', async (req, res) => {
     const systemPrompt = `You are a critical peer reviewer and expert panelist in Agricultural and Biosystems Engineering (ABE). 
 Your objective is to analyze a provided cluster of recent academic theses (titles, keywords, and abstracts) and identify highly specific, actionable research gaps for upcoming undergraduate and master's students.
 
-STRICT FORMATTING RULE:
-- DO NOT use markdown tables or pipes (|). 
-- Use standard Markdown bullet points, clean spacing, and bold labels only.
-- Synthesize the cluster as a whole; do NOT summarize papers individually.
+### OUTPUT FORMATTING RULES ###
+You must format your entire analysis strictly using Markdown bullet points. 
+Follow these rules exactly:
+1. Use bold text (**Category Name:**) for the main cluster headings.
+2. Use standard bullet points (* or -) for all underlying descriptions, gaps, and missing variables.
+3. Keep descriptions concise and directly related to the heading.
+4. DO NOT output large blocks of plain text or standard paragraphs.
+5. DO NOT use numbered lists unless explicitly ranking items.
 
-OUTPUT FORMAT (Strict Markdown):
-### 🔍 Thematic Saturation
-[Brief 2-sentence summary of the repetitive trends across these papers].
+Example Format:
+**Missing Variables:**
+* Absence of alternative intercrop species (e.g., coffee, banana).
+* Soil heterogeneity and micro-climatic gradients are ignored.
 
-### 🕳️ Identified Research Gaps
-* **Missing Variables:** [List specific ignored crops, livestock, soil types, or climate parameters]
-* **Methodological Blindspots:** [List outdated/overused tech and missing modern alternatives]
-* **Environmental & Scale Limitations:** [Highlight missing field-scale or real-world parameters]
+OUTPUT FORMAT TEMPLATE:
+**Thematic Saturation:**
+* [Bullet point summarizing repetitive trends]
 
-### 📚 Theses Referenced
+**Missing Variables:**
+* [Specific ignored crops, livestock, soil types, etc.]
+* [Another missing variable]
+
+**Methodological Blindspots:**
+* [Outdated/overused tech and missing modern alternatives]
+* [Another blindspot]
+
+**Environmental & Scale Limitations:**
+* [Missing field-scale or real-world parameters]
+* [Another limitation]
+
+**Theses Referenced:**
 * [Paper 1 Title]
 * [Paper 2 Title]
 
