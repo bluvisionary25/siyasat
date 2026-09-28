@@ -112,29 +112,29 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000]  relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
-      
-      {/* NAVBAR */}
-      <Navbar 
-        activePage="repository" 
-        onNavigate={onNavigate} 
-        currentUser={currentUser} 
+    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
+
+      {/* Navbar */}
+      <Navbar
+        activePage="repository"
+        onNavigate={onNavigate}
+        currentUser={currentUser}
       />
 
-      {/* MAIN CONTENT */}
+      {/* Main content */}
       <main className="max-w-4xl mx-auto px-6 pt-4 relative z-10 space-y-8">
-        
-        {/* PAGE TITLE */}
-        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight ">
+
+        {/* Page title */}
+        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight">
           Edit Your Paper
         </h1>
 
-        {/* FORM CONTAINER BOX */}
+        {/* Form card */}
         <div className="bg-[#FAF8F5]/90 backdrop-blur-sm border border-gray-200/90 rounded-3xl p-8 md:p-12 shadow-sm relative overflow-visible">
-          
+
           <form onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* TITLE FIELD */}
+
+            {/* Title */}
             <div className="relative">
               <input
                 type="text"
@@ -145,15 +145,15 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
                 placeholder=" "
                 className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent"
               />
-              <label 
-                htmlFor="edit-title" 
-                className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
-              >
-                Title
-              </label>
+                <label
+                  htmlFor="edit-title"
+                  className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
+                >
+                  Title
+                </label>
             </div>
 
-            {/* AUTHOR & YEAR ACCEPTED */}
+            {/* Author & Year Accepted */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="relative">
                 <input
@@ -165,8 +165,8 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
                   placeholder=" "
                   className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent"
                 />
-                <label 
-                  htmlFor="edit-author" 
+                <label
+                  htmlFor="edit-author"
                   className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
                 >
                   Author
@@ -183,8 +183,8 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
                   placeholder=" "
                   className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent"
                 />
-                <label 
-                  htmlFor="edit-year" 
+                <label
+                  htmlFor="edit-year"
                   className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
                 >
                   Year Accepted
@@ -192,7 +192,7 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
               </div>
             </div>
 
-            {/* BRANCH & KEYWORDS */}
+            {/* Department & Keywords */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="relative">
                 <select
@@ -207,8 +207,8 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
                   <option value="Agricultural and Biosystems Processing Engineering (Post-Harvest)">Agricultural and Biosystems Processing Engineering (Post-Harvest)</option>
                   <option value="Agricultural Informatics and Automation">Agricultural Informatics and Automation</option>
                 </select>
-                <label 
-                  htmlFor="edit-branch" 
+                <label
+                  htmlFor="edit-branch"
                   className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all pointer-events-none"
                 >
                   Department
@@ -225,8 +225,8 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
                   placeholder=" "
                   className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent"
                 />
-                <label 
-                  htmlFor="edit-keywords" 
+                <label
+                  htmlFor="edit-keywords"
                   className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
                 >
                   Keywords
@@ -234,7 +234,7 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
               </div>
             </div>
 
-            {/* ABSTRACT TEXTAREA */}
+            {/* Abstract */}
             <div className="relative">
               <textarea
                 required
@@ -245,14 +245,14 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
                 placeholder=" "
                 className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-medium bg-transparent resize-none leading-relaxed"
               />
-              <label 
-                htmlFor="edit-abstract" 
+              <label
+                htmlFor="edit-abstract"
                 className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
               >
                 Abstract
               </label>
 
-              {/* SUCCESS POPUP OVERLAY INSIDE ABSTRACT / FORM */}
+              {/* Success overlay — rendered inside the abstract container to preserve layout */}
               {showSuccessModal && (
                 <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-xl border border-gray-300 flex flex-col items-center justify-center p-6 text-center shadow-lg z-30 space-y-4 animate-in fade-in">
                   <CheckCircle2 className="w-10 h-10 text-[#800000]" />
@@ -273,7 +273,7 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
               )}
             </div>
 
-            {/* FILE UPLOAD FIELD */}
+            {/* File upload */}
             <div className="relative">
               <div className="w-full px-4 py-3.5 rounded-xl border border-gray-400/80 flex items-center justify-between bg-transparent">
                 <span className="text-xs font-semibold text-gray-700 truncate">
@@ -301,7 +301,7 @@ const EditPaperPage = ({ onNavigate, currentUser, paper, onSaveEdit }) => {
               </div>
             )}
 
-            {/* ACTION BUTTONS */}
+            {/* Action buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-2">
               <button
                 type="button"

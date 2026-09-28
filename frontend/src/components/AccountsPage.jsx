@@ -42,24 +42,24 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000]  relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
-      
-      {/* NAVBAR */}
-      <Navbar 
-        activePage="accounts" 
-        onNavigate={onNavigate} 
-        currentUser={currentUser} 
+    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
+
+      {/* Navbar */}
+      <Navbar
+        activePage="accounts"
+        onNavigate={onNavigate}
+        currentUser={currentUser}
       />
 
-      {/* MAIN CONTAINER */}
+      {/* Main container */}
       <main className="max-w-6xl mx-auto px-6 pt-4 relative z-10 space-y-8">
-        
-        {/* PAGE TITLE */}
-        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight ">
+
+        {/* Page title */}
+        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight">
           Account Management
         </h1>
 
-        {/* ACCOUNTS TABLE CARD */}
+        {/* Accounts table card */}
         <div className="bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-2xl shadow-sm overflow-visible">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[700px]">
@@ -90,7 +90,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                         isBlocked ? 'bg-rose-50/40 text-gray-500' : ''
                       }`}
                     >
-                      {/* EMAIL COLUMN */}
+                      {/* Email column */}
                       <td className="p-3.5 pl-8 text-center font-bold border-r border-gray-100 text-gray-800 text-xs">
                         {user.email}
                         {isBlocked && (
@@ -100,16 +100,16 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                         )}
                       </td>
 
-                      {/* ROLE COLUMN */}
+                      {/* Role column */}
                       <td className="p-3.5 text-center font-bold border-r border-gray-100 text-gray-800 text-xs">
                         {formattedRole}
                       </td>
 
-                      {/* ACTION COLUMN */}
+                      {/* Action column */}
                       <td className="p-3.5 pr-8 text-center relative">
                         <div className="flex items-center justify-center space-x-3">
                           
-                          {/* BLOCK BUTTON & POPOVER */}
+                          {/* Block button & confirmation popover */}
                           <div className="relative">
                             <button
                               type="button"
@@ -153,7 +153,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                             )}
                           </div>
 
-                          {/* CHANGE ROLE BUTTON & DROPDOWN */}
+                          {/* Change role button & dropdown */}
                           <div className="relative">
                             <button
                               type="button"

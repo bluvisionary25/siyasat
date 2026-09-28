@@ -18,16 +18,22 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
   const [similarityScore, setSimilarityScore] = useState(0);
   const [uploadError, setUploadError] = useState(null);
 
+  /**
+   * Handles form submission. When `forceUpload` is true, the duplicate check
+   * on the server is bypassed via the `ignoreDuplicate` flag.
+   */
   const handleSubmit = async (e, forceUpload = false) => {
     if (e) e.preventDefault();
     setUploadError(null);
     setDuplicateWarning(null);
 
+    // Guard: require a file before proceeding
     if (!file) {
       setUploadError('Please select a PDF file to upload.');
       return;
     }
 
+    // Guard: validate file type and size (max 25 MB)
     if ((file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) || file.size > 25 * 1024 * 1024) {
       setUploadError('File must be a PDF under 25MB.');
       return;
@@ -59,12 +65,14 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
       try {
         data = await res.json();
       } catch (parseErr) {
+        // Response body could not be parsed — likely a payload-too-large rejection
         setUploadError('File must be a PDF under 25MB or server rejected the request.');
         setIsSubmitting(false);
         return;
       }
 
       if (res.status === 409) {
+        // Server detected a possible duplicate; surface the warning to the user
         setDuplicateWarning(data.message);
         setSimilarityScore(data.similarityScore || 0);
       } else if (res.ok) {
@@ -81,29 +89,29 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000]  relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
+    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
       
-      {/* NAVBAR */}
-      <Navbar 
-        activePage="upload" 
-        onNavigate={onNavigate} 
-        currentUser={currentUser} 
+      {/* Navbar */}
+      <Navbar
+        activePage="upload"
+        onNavigate={onNavigate}
+        currentUser={currentUser}
       />
 
-      {/* UPLOAD FORM CONTAINER */}
+      {/* Upload form container */}
       <main className="max-w-4xl mx-auto px-6 pt-4 relative z-10 space-y-8">
-        
-        {/* PAGE TITLE */}
-        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight ">
+
+        {/* Page title */}
+        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight">
           Upload Your Paper
         </h1>
 
-        {/* FORM CONTAINER BOX */}
+        {/* Form card */}
         <div className="bg-[#FAF8F5]/90 backdrop-blur-sm border border-gray-200/90 rounded-3xl p-8 md:p-12 shadow-sm relative overflow-visible">
           
           <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-6">
-            
-            {/* TITLE FIELD */}
+
+            {/* Title */}
             <div className="relative">
               <input
                 type="text"
@@ -114,15 +122,15 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
                 placeholder=" "
                 className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent"
               />
-              <label 
-                htmlFor="upload-title" 
+              <label
+                htmlFor="upload-title"
                 className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
               >
                 Title
               </label>
             </div>
 
-            {/* AUTHOR & YEAR ACCEPTED */}
+            {/* Author & Year Accepted */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="relative">
                 <input
@@ -134,8 +142,8 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
                   placeholder=" "
                   className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent"
                 />
-                <label 
-                  htmlFor="upload-author" 
+                <label
+                  htmlFor="upload-author"
                   className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
                 >
                   Author
@@ -152,8 +160,8 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
                   placeholder=" "
                   className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent"
                 />
-                <label 
-                  htmlFor="upload-year" 
+                <label
+                  htmlFor="upload-year"
                   className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
                 >
                   Year Accepted
@@ -161,7 +169,7 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
               </div>
             </div>
 
-            {/* BRANCH & KEYWORDS */}
+            {/* Department & Keywords */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="relative">
                 <select
@@ -176,8 +184,8 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
                   <option value="AB Structures and Environment Engineering">AB Structures and Environment Engineering</option>
                   <option value="AB Process Engineering">AB Process Engineering</option>
                 </select>
-                <label 
-                  htmlFor="upload-department" 
+                <label
+                  htmlFor="upload-branch"
                   className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all pointer-events-none"
                 >
                   Department
@@ -194,8 +202,8 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
                   placeholder=" "
                   className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent"
                 />
-                <label 
-                  htmlFor="upload-keywords" 
+                <label
+                  htmlFor="upload-keywords"
                   className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
                 >
                   Keywords
@@ -203,7 +211,7 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
               </div>
             </div>
 
-            {/* ABSTRACT TEXTAREA */}
+            {/* Abstract */}
             <div className="relative">
               <textarea
                 required
@@ -214,14 +222,14 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
                 placeholder=" "
                 className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-medium bg-transparent resize-none leading-relaxed"
               />
-              <label 
-                htmlFor="upload-abstract" 
+              <label
+                htmlFor="upload-abstract"
                 className="absolute left-3 -top-2.5 bg-[#FAF8F5] px-2 text-xs font-bold text-[#800000] transition-all"
               >
                 Abstract
               </label>
 
-              {/* SUCCESS POPUP OVERLAY INSIDE ABSTRACT / FORM */}
+              {/* Success overlay — rendered inside the abstract container to preserve layout */}
               {showSuccessModal && (
                 <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-xl border border-gray-300 flex flex-col items-center justify-center p-6 text-center shadow-lg z-30 space-y-4 animate-in fade-in">
                   <CheckCircle2 className="w-10 h-10 text-[#800000]" />
@@ -242,7 +250,7 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
               )}
             </div>
 
-            {/* FILE UPLOAD FIELD */}
+            {/* File upload */}
             <div className="relative">
               <div className="w-full px-4 py-3.5 rounded-xl border border-gray-400/80 flex items-center justify-between bg-transparent">
                 <span className="text-xs font-semibold text-gray-700 truncate">
@@ -272,7 +280,7 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
               )}
             </div>
 
-            {/* SUBMIT BUTTON */}
+            {/* Submit */}
             <button
               type="submit"
               disabled={isSubmitting}
@@ -283,7 +291,7 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
 
           </form>
 
-          {/* DUPLICATE WARNING MODAL */}
+          {/* Duplicate warning modal */}
           {duplicateWarning && (
             <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-3xl flex items-center justify-center p-4 z-40">
               <div className="bg-white rounded-2xl border border-amber-300 p-6 text-center max-w-sm w-full shadow-2xl space-y-4">

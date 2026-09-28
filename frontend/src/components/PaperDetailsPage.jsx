@@ -157,20 +157,20 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000]  relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
-      
-      {/* NAVBAR */}
-      <Navbar 
-        activePage="repository" 
-        onNavigate={onNavigate} 
-        currentUser={currentUser} 
+    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
+
+      {/* Navbar */}
+      <Navbar
+        activePage="repository"
+        onNavigate={onNavigate}
+        currentUser={currentUser}
         onLoginClick={onLoginClick}
       />
 
-      {/* MAIN CONTAINER */}
+      {/* Main container */}
       <main className="max-w-4xl mx-auto px-6 pt-4 relative z-10 space-y-6">
-        
-        {/* BACK TO REPOSITORY BUTTON */}
+
+        {/* Back to repository button */}
         <button
           onClick={() => onNavigate('repository')}
           className="inline-flex items-center space-x-2 text-xs font-bold text-[#800000] hover:underline cursor-pointer"
@@ -179,16 +179,16 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
           <span>Back to Repository</span>
         </button>
 
-        {/* PAPER DETAILS CARD CONTAINER */}
+        {/* Paper details card */}
         <div className="bg-[#FAF8F5]/90 backdrop-blur-sm border border-gray-200/90 rounded-3xl p-8 md:p-10 shadow-xs space-y-6 relative overflow-visible">
-          
-          {/* TOP BAR WITH TITLE & ADMIN ACTIONS */}
+
+          {/* Top bar with title & admin actions */}
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-            <h1 className="text-xl md:text-2xl font-extrabold text-[#800000] leading-snug ">
+            <h1 className="text-xl md:text-2xl font-extrabold text-[#800000] leading-snug">
               {p.title}
             </h1>
 
-            {/* ADMIN / ADVISER ACTIONS */}
+            {/* Admin / Adviser actions */}
             {isElevatedUser && (
               <div className="flex items-center space-x-2 shrink-0">
                 <button
@@ -213,7 +213,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
             )}
           </div>
 
-          {/* METADATA GRID */}
+          {/* Metadata grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-y border-gray-200/80 py-4">
             <div>
               <p className="text-[10px] font-extrabold text-[#800000] uppercase tracking-wider">Authors</p>
@@ -235,18 +235,18 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
             </div>
           </div>
 
-          {/* ABSTRACT */}
+          {/* Abstract */}
           <div className="space-y-2">
-            <h3 className="text-sm font-extrabold text-[#800000] ">Abstract</h3>
+            <h3 className="text-sm font-extrabold text-[#800000]">Abstract</h3>
             <p className="text-xs md:text-sm text-gray-700 leading-relaxed font-medium justify-text">
               {p.abstract}
             </p>
           </div>
 
-          {/* ACTION BUTTONS: DOWNLOAD & AI ANALYZE GAPS */}
+          {/* Action buttons: Download & AI Analyze Gaps */}
           <div className="pt-4 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200/80">
-            
-            {/* AI ANALYZE GAPS BUTTON (ADVISER ONLY, OR GUEST PROMPT) */}
+
+            {/* AI Analyze Gaps button (all users) */}
             {(canUseAi || !currentUser) && (
               <button
                 onClick={handleRunAiAnalysis}
@@ -257,7 +257,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
               </button>
             )}
 
-            {/* DOWNLOAD BUTTON */}
+            {/* Download button */}
             <button
               onClick={handleDownload}
               disabled={downloading}
@@ -272,7 +272,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
 
       </main>
 
-      {/* AI GAP ANALYSIS MODAL */}
+      {/* AI gap analysis modal */}
       {showAiModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
           <div className="bg-[#FDFBF7] rounded-3xl border border-gray-200 p-6 md:p-8 max-w-2xl w-full shadow-2xl space-y-6 relative max-h-[85vh] overflow-y-auto">
@@ -289,7 +289,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-extrabold text-[#800000] ">AI Gap Analysis Report</h3>
+              <h3 className="text-lg font-extrabold text-[#800000]">AI Gap Analysis Report</h3>
                 <p className="text-xs font-semibold text-gray-600 line-clamp-1">{p.title}</p>
               </div>
             </div>
@@ -416,7 +416,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
               </div>
             )}
 
-            {/* AI ADVISORY BANNER */}
+            {/* AI advisory banner */}
             <div className="bg-amber-50 border-l-4 border-amber-500 p-3.5 rounded-r-lg my-4 flex items-start gap-3 shadow-xs">
               <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
@@ -439,7 +439,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
         </div>
       )}
 
-      {/* DELETE MODAL */}
+      {/* Delete confirmation modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
           <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center max-w-sm w-full shadow-2xl space-y-4">

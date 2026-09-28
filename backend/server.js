@@ -378,8 +378,6 @@ async function checkForDuplicateThesis(title = '', abstract = '') {
     const cleanNewTitle = String(title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const cleanNewAbstract = String(abstract || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-    console.log(`🔍 [Duplication Checker] Scanning incoming paper: "${title.trim()}"`);
-
     const existing = await pool.query('SELECT id, title, abstract FROM theses');
 
     if (existing.rows.length === 0) {
@@ -423,8 +421,6 @@ async function checkForDuplicateThesis(title = '', abstract = '') {
       }
     }
 
-    console.log(`📊 [Duplication Result] Highest Score: ${highestScore}% | Matched: "${matchedThesis?.title || 'None'}"`);
-
     if (highestScore >= 30 && matchedThesis) {
       return {
         isDuplicate: true,
@@ -464,7 +460,6 @@ function getCleanTokens(text) {
 }
 
 function computeSimilarityAndCluster(targetThesis, allTheses) {
-  console.log(`[Similarity Engine] Scanning Thesis #${targetThesis.id || 'NEW'} - Fields: Title, Abstract, Keywords`);
   const targetTitle = getCleanTokens(targetThesis.title);
   const targetAbstract = getCleanTokens(targetThesis.abstract);
   const targetKeywords = getCleanTokens(targetThesis.keywords);
@@ -831,20 +826,7 @@ function generatePdfBuffer(paper = {}) {
   return Buffer.from(fullPdf);
 }
 
-// 5. Delete Thesis (Admin Only)
-app.delete('/api/theses/:id', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ message: 'Access denied. Administrator privileges required.' });
-  }
 
-  try {
-    await pool.query('DELETE FROM theses WHERE id = $1', [req.params.id]);
-    res.json({ message: 'Thesis deleted successfully.' });
-  } catch (err) {
-    console.error('Delete Error:', err);
-    res.status(500).json({ message: 'Failed to delete thesis record.' });
-  }
-});
 
 // 5.1 Download Thesis PDF Route
 app.get('/api/theses/:id/download', async (req, res) => {
@@ -1027,7 +1009,6 @@ Output JSON only, with no markdown code blocks or additional conversational text
         
         try {
           const searchUrl = `https://api.openalex.org/works?search=${encodeURIComponent(gap.search_query)}&filter=type:article,is_retracted:false&per_page=3&sort=relevance_score:desc`;
-          console.log(`OpenAlex Fetch URL: ${searchUrl}`);
           const searchRes = await fetch(searchUrl, {
             headers: {
               'Authorization': `Bearer ${OPENALEX_API_KEY}`
@@ -1407,9 +1388,6 @@ OUTPUT FORMAT TEMPLATE:
     // Fallback: Use the first 4 words of the first paper's title
     if (!searchQuery && theses && theses.length > 0 && theses[0].title) {
         searchQuery = theses[0].title.split(/\s+/).slice(0, 4).join(' ');
-        console.log(`[OpenAlex Fallback] Regex failed. Using fallback query: "${searchQuery}"`);
-    } else if (searchQuery) {
-        console.log(`[OpenAlex] Extracted AI query: "${searchQuery}"`);
     }
 
     let globalReferences = [];
@@ -1417,8 +1395,6 @@ OUTPUT FORMAT TEMPLATE:
     if (searchQuery) {
         try {
             const openAlexUrl = `https://api.openalex.org/works?search=${encodeURIComponent(searchQuery)}&per_page=10&sort=publication_year:desc`;
-            console.log(`[OpenAlex] Fetching from URL: ${openAlexUrl}`);
-            
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 4000);
             

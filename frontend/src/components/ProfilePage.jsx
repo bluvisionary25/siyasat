@@ -93,7 +93,7 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout, onUpdateUser }) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000]  relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
+    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
 
       <Navbar
         activePage="profile"
@@ -149,7 +149,7 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout, onUpdateUser }) => {
         </div>
       </main>
 
-      {/* LOGOUT CONFIRMATION MODAL */}
+      {/* Logout confirmation modal */}
       {isLogoutModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center space-y-6 animate-in fade-in duration-200">

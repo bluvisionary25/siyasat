@@ -11,8 +11,7 @@ const Navbar = ({
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // If activePage is 'home' and darkHeader is explicitly passed or default true on home
-  // but let's be context-aware: if darkHeader is explicitly provided, use it; otherwise, home default to true, others false
+  // Use darkHeader prop when explicitly provided; default to true on home, false on all other pages
   const isDark = darkHeader !== undefined ? darkHeader : activePage === 'home';
 
   const role = currentUser?.role?.toUpperCase();

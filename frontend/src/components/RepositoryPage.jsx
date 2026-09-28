@@ -260,9 +260,9 @@ const RepositoryPage = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000]  relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
+    <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
 
-      {/* NAVBAR */}
+      {/* Navbar */}
       <Navbar
         activePage="repository"
         onNavigate={onNavigate}
@@ -270,15 +270,15 @@ const RepositoryPage = ({
         onLoginClick={onLoginClick}
       />
 
-      {/* MAIN CONTENT */}
+      {/* Main content */}
       <main className="max-w-7xl mx-auto px-6 pt-2 relative z-10 space-y-6">
 
-        {/* PAGE TITLE */}
-        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight ">
+        {/* Page title */}
+        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight">
           Research and Thesis Repository
         </h1>
 
-        {/* SEARCH AND FILTERS BAR */}
+        {/* Search and filters bar */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 max-w-6xl mx-auto pt-2">
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
 
@@ -301,7 +301,7 @@ const RepositoryPage = ({
               </button>
             </div>
 
-            {/* CATEGORY FILTER PILL */}
+            {/* Category filter */}
             <div className="relative">
               <select
                 value={selectedBranch}
@@ -317,7 +317,7 @@ const RepositoryPage = ({
               <ChevronDown className="w-3.5 h-3.5 text-[#800000] absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
             </div>
 
-            {/* SORT BY PILL */}
+            {/* Sort by */}
             <div className="relative">
               <select
                 value={sortBy}
@@ -334,7 +334,7 @@ const RepositoryPage = ({
             </div>
           </div>
 
-          {/* SEARCH INPUT BAR */}
+          {/* Search input */}
           <div className="relative w-full md:w-96">
             <input
               type="text"
@@ -349,13 +349,13 @@ const RepositoryPage = ({
 
 
 
-        {/* 2-COLUMN REPOSITORY & AI GAP ANALYSIS GRID */}
+        {/* Two-column repository & AI gap analysis grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-6xl mx-auto pt-2">
 
-          {/* LEFT COLUMN: THESIS PAPERS LIST */}
+          {/* Left column: thesis papers list */}
           <div className="lg:col-span-7 bg-[#FAF8F5]/90 border border-gray-200/90 rounded-3xl p-5 shadow-xs max-h-[750px] overflow-y-auto space-y-4">
 
-            {/* EMPTY STATE - NO PAPERS IN REPOSITORY */}
+            {/* Empty state */}
             {sortedPapers.length === 0 && (
               <div className="py-20 flex flex-col items-center justify-center text-center space-y-3">
                 <BookOpen className="w-10 h-10 text-[#800000]/20" />
@@ -625,16 +625,16 @@ const RepositoryPage = ({
 
           </div>
 
-          {/* RIGHT COLUMN: ANALYZE GAPS PANEL */}
+          {/* Right column: AI gap analysis panel */}
           <div className="lg:col-span-5 bg-[#FAF8F5]/90 border border-gray-200/90 rounded-3xl p-5 shadow-xs max-h-[750px] overflow-y-auto space-y-4">
 
-            {/* PANEL HEADER PILL */}
-            <div className="bg-[#E8E2D9] text-[#800000] font-extrabold text-xs text-center py-2.5 rounded-full shadow-2xs  tracking-wide flex items-center justify-center space-x-2">
+            {/* Panel header */}
+            <div className="bg-[#E8E2D9] text-[#800000] font-extrabold text-xs text-center py-2.5 rounded-full shadow-2xs tracking-wide flex items-center justify-center space-x-2">
               <Sparkles className="w-4 h-4 text-[#800000]" />
               <span>Analyze Gaps</span>
             </div>
 
-            {/* SELECTED PAPER SUBTITLE */}
+            {/* Selected paper subtitle */}
             {selectedPaperForAi ? (
               <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-3 text-xs">
                 <span className="text-[10px] font-extrabold uppercase text-[#800000] block mb-0.5">Analyzing Paper:</span>
@@ -652,7 +652,7 @@ const RepositoryPage = ({
               </p>
             )}
 
-            {/* LOADING STATE */}
+            {/* Loading state */}
             {isAnalyzing ? (
               <div className="py-12 text-center space-y-3">
                 <Loader2 className="w-8 h-8 text-[#F5B842] animate-spin mx-auto" />
@@ -670,12 +670,12 @@ const RepositoryPage = ({
                   <div key={gap.id || index} className="flex flex-col bg-white p-4 rounded-2xl border border-gray-200/60 shadow-2xs">
 
                     <div className="flex items-start space-x-3.5">
-                      {/* NUMBERED MAROON CIRCLE BADGE */}
+                      {/* Numbered badge */}
                       <div className="w-6 h-6 rounded-full bg-[#800000] text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
                         {index + 1}
                       </div>
 
-                      {/* GAP CONTENT */}
+                      {/* Gap content */}
                       <div className="space-y-1 w-full">
                         <h4 className="text-xs font-extrabold text-[#800000] leading-snug">
                           {gap.title}
@@ -686,7 +686,7 @@ const RepositoryPage = ({
                       </div>
                     </div>
 
-                    {/* EXPANDABLE ACCORDION FOR CITATIONS */}
+                    {/* Expandable citations accordion */}
                     {((gap.cited_papers && gap.cited_papers.length > 0) || (gap.online_references && gap.online_references.length > 0)) && (
                       <div className="mt-3 pl-9 border-t border-gray-100 pt-3">
                         <button
@@ -768,7 +768,7 @@ const RepositoryPage = ({
                   </div>
                 ))}
 
-                {/* AI ADVISORY BANNER */}
+                {/* AI advisory banner */}
                 <div className="bg-amber-50 border-l-4 border-amber-500 p-3.5 rounded-r-lg my-4 flex items-start gap-3 shadow-xs">
                   <span className="text-xl">⚠️</span>
                   <div>
@@ -805,7 +805,7 @@ const RepositoryPage = ({
 
       </main>
 
-      {/* DELETE CONFIRMATION MODAL FOR ADMIN */}
+      {/* Delete confirmation modal */}
       {paperToDelete && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
           <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center max-w-sm w-full shadow-2xl space-y-4">
@@ -836,7 +836,7 @@ const RepositoryPage = ({
         </div>
       )}
 
-      {/* CLUSTER GAP ANALYSIS MODAL */}
+      {/* Cluster gap analysis modal */}
       {(loadingClusterAnalysis || clusterAnalysisResult || clusterAnalysisError) && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in">
           <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden">
