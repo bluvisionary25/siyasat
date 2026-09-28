@@ -400,7 +400,7 @@ const HomePage = ({
             CLSU Department of Agricultural and Biosystems Engineering
           </p>
 
-          {/* CONDITIONAL LOGIN BUTTON: Render if STUDENT or logged out */}
+          {/* CONDITIONAL LOGIN BUTTON: Render if logged out */}
           {showLoginBtn && (
             <div className="pt-3">
               <button

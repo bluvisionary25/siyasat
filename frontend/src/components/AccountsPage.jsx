@@ -170,7 +170,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
 
                             {openRoleDropdownId === user.id && (
                               <div className="absolute right-0 top-11 bg-white border border-[#800000]/20 rounded-xl p-2 shadow-2xl w-40 z-50 text-left space-y-1 animate-in fade-in zoom-in-95">
-                                {['ADMIN', 'ADVISER', 'STUDENT'].map((r) => {
+                                {['ADMIN', 'ADVISER'].map((r) => {
                                   const isCurrent = (user.role || '').toUpperCase() === r;
                                   return (
                                     <button

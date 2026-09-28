@@ -16,9 +16,7 @@ const RepositoryPage = ({
   const userRole = currentUser?.role?.toUpperCase() || null;
   const isAdmin = userRole === 'ADMIN';
   const isAdviser = userRole === 'ADVISER';
-  const isStudent = userRole === 'STUDENT';
-
-  // PB015 & PB030 Rule: Allow public/unauthenticated, Student, and Adviser to use AI Gap Analysis
+  // PB015 & PB030 Rule: Allow public/unauthenticated and Adviser to use AI Gap Analysis
   const canUseAi = !isAdmin;
   const isElevatedUser = isAdmin || isAdviser;
 
@@ -650,7 +648,7 @@ const RepositoryPage = ({
                   ? 'AI Analysis is disabled for System Administrators.'
                   : (canUseAi
                     ? 'Click "AI Analyze Gaps" on any paper card to run AI analysis.'
-                    : 'AI Gap Tool (Student & Adviser feature)')}
+                    : 'AI Gap Tool (Adviser feature)')}
               </p>
             )}
 
@@ -796,7 +794,7 @@ const RepositoryPage = ({
                 <p className="text-xs text-gray-400 font-medium leading-relaxed">
                   {canUseAi
                     ? 'Select a paper and click "AI Analyze Gaps" to identify research gaps.'
-                    : 'AI Gap Analysis is available for Students & Advisers.'}
+                    : 'AI Gap Analysis is available for Advisers.'}
                 </p>
               </div>
             )}

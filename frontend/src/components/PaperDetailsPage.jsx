@@ -6,7 +6,6 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
   const userRole = (currentUser?.role || '').toUpperCase();
   const isAdmin = userRole === 'ADMIN';
   const isAdviser = userRole === 'ADVISER';
-  const isStudent = userRole === 'STUDENT';
   const canUseAi = true;
   const isElevatedUser = isAdmin || isAdviser;
 
@@ -247,7 +246,7 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
           {/* ACTION BUTTONS: DOWNLOAD & AI ANALYZE GAPS */}
           <div className="pt-4 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200/80">
             
-            {/* AI ANALYZE GAPS BUTTON (STUDENT & ADVISER ONLY, OR GUEST PROMPT) */}
+            {/* AI ANALYZE GAPS BUTTON (ADVISER ONLY, OR GUEST PROMPT) */}
             {(canUseAi || !currentUser) && (
               <button
                 onClick={handleRunAiAnalysis}

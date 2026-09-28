@@ -5,7 +5,7 @@ import PaperDetailsPage from './components/PaperDetailsPage';
 import UploadPage from './components/UploadPage';
 import EditPaperPage from './components/EditPaperPage';
 import AccountsPage from './components/AccountsPage';
-import StudentProfilePage from './components/StudentProfilePage';
+
 import ProfilePage from './components/ProfilePage';
 import AboutUsPage from './components/AboutUsPage';
 import AuthModal from './components/AuthModal';
@@ -494,21 +494,12 @@ function App() {
                         window.location.replace('/');
                     }}
                 >
-                    {currentUser?.role === 'STUDENT' ? (
-                        <StudentProfilePage
-                            currentUser={currentUser}
-                            onNavigate={handleNavigate}
-                            onLogout={handleLogout}
-                            onUpdateUser={setCurrentUser}
-                        />
-                    ) : (
-                        <ProfilePage
-                            currentUser={currentUser}
-                            onNavigate={handleNavigate}
-                            onLogout={handleLogout}
-                            onUpdateUser={setCurrentUser}
-                        />
-                    )}
+                    <ProfilePage
+                        currentUser={currentUser}
+                        onNavigate={handleNavigate}
+                        onLogout={handleLogout}
+                        onUpdateUser={setCurrentUser}
+                    />
                 </ProtectedRoute>
             )}
 
