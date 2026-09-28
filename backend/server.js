@@ -287,6 +287,23 @@ app.post('/api/users/profile-picture', authenticateToken, imageUpload.single('pr
   }
 });
 
+// 2.1b Remove Profile Picture
+app.delete('/api/users/profile-picture', authenticateToken, async (req, res) => {
+  try {
+    const updateRes = await pool.query(
+      'UPDATE users SET profile_image = NULL WHERE id = $1 RETURNING id, full_name, email, role, profile_image, status',
+      [req.user.id]
+    );
+    if (updateRes.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    res.json({ message: 'Profile picture removed', user: updateRes.rows[0] });
+  } catch (err) {
+    console.error('Profile Picture Remove Error:', err);
+    res.status(500).json({ message: 'Failed to remove profile picture' });
+  }
+});
+
 // 2.2 Get Current User
 app.get('/api/users/me', authenticateToken, async (req, res) => {
   try {

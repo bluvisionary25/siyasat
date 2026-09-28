@@ -10,10 +10,11 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout, onUpdateUser }) => {
   const [profileImage, setProfileImage] = useState(() => {
     return currentUser?.profile_image || null;
   });
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    if (currentUser?.profile_image) {
-      setProfileImage(currentUser.profile_image);
+    if (currentUser?.profile_image !== undefined) {
+      setProfileImage(currentUser?.profile_image || null);
     }
   }, [currentUser?.profile_image]);
   
@@ -52,7 +53,7 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout, onUpdateUser }) => {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      setProfileImage(URL.createObjectURL(file));
+      setIsUploading(true);
       const formData = new FormData();
       formData.append('profile_image', file);
 
@@ -75,7 +76,35 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout, onUpdateUser }) => {
         }
       } catch (err) {
         console.error('Error uploading image', err);
+      } finally {
+        setIsUploading(false);
+        e.target.value = null; // Reset input so the same file can be selected again
       }
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    setIsUploading(true);
+    try {
+      const token = localStorage.getItem('siyasat_token') || sessionStorage.getItem('siyasat_token');
+      const res = await fetch('https://siyasat-backend.onrender.com/api/users/profile-picture', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (res.ok && data.user) {
+        localStorage.setItem('siyasat_user', JSON.stringify(data.user));
+        setProfileImage(null);
+        if (onUpdateUser) onUpdateUser(data.user);
+      } else {
+        console.error(data.message);
+      }
+    } catch (err) {
+      console.error('Error removing photo', err);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -112,10 +141,29 @@ const ProfilePage = ({ onNavigate, currentUser, onLogout, onUpdateUser }) => {
                 <span className="text-gray-400 text-3xl font-bold">{currentUser?.full_name ? currentUser.full_name.charAt(0) : ''}</span>
               )}
             </div>
-            <label className="mt-3 px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-[10px] font-medium rounded-full cursor-pointer">
-              Upload profile picture
-              <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-            </label>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <label className={`px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-[10px] font-medium rounded-full cursor-pointer flex items-center transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  'Upload profile picture'
+                )}
+                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={isUploading} />
+              </label>
+              
+              {profileImage && (
+                <button
+                  onClick={handleRemovePhoto}
+                  disabled={isUploading}
+                  className="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[10px] font-medium rounded-full cursor-pointer transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  Remove Photo
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="space-y-1">
