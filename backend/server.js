@@ -1343,7 +1343,8 @@ OUTPUT FORMAT (Strict Markdown):
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessageContent }
         ],
-        temperature: 0.3
+        temperature: 0.3,
+        max_tokens: 2500
       })
     });
 
@@ -1359,13 +1360,22 @@ OUTPUT FORMAT (Strict Markdown):
     // Extract the query
     // This regex allows for optional '###', optional spaces, and ANY type of line break
     const queryMatch = aiResponse.match(/🔑\s*Global Search Query\s*[\r\n]+([^\r\n]+)/i);
-    const searchQuery = queryMatch ? queryMatch[1].trim() : null;
+    let searchQuery = queryMatch ? queryMatch[1].trim() : null;
+
+    // Fallback: Use the first 4 words of the first paper's title
+    if (!searchQuery && theses && theses.length > 0 && theses[0].title) {
+        searchQuery = theses[0].title.split(/\s+/).slice(0, 4).join(' ');
+        console.log(`[OpenAlex Fallback] Regex failed. Using fallback query: "${searchQuery}"`);
+    } else if (searchQuery) {
+        console.log(`[OpenAlex] Extracted AI query: "${searchQuery}"`);
+    }
 
     let globalReferences = [];
 
     if (searchQuery) {
         try {
             const openAlexUrl = `https://api.openalex.org/works?search=${encodeURIComponent(searchQuery)}&per_page=10&sort=publication_year:desc`;
+            console.log(`[OpenAlex] Fetching from URL: ${openAlexUrl}`);
             
             const response = await fetch(openAlexUrl);
             const data = await response.json();
@@ -1382,19 +1392,18 @@ OUTPUT FORMAT (Strict Markdown):
                         ? work.primary_location.source.display_name 
                         : 'Independent Publication'
                 }));
-                
-                // Delete everything from the "🔑" to the end of the AI's output
-                const rawQuerySection = aiResponse.substring(aiResponse.indexOf('🔑') - 4);
-                aiResponse = aiResponse.replace(rawQuerySection, '');
-            } else {
-                // No results, just delete the query block
+            }
+            
+            if (aiResponse.includes('🔑')) {
                 const rawQuerySection = aiResponse.substring(aiResponse.indexOf('🔑') - 4);
                 aiResponse = aiResponse.replace(rawQuerySection, '');
             }
         } catch (error) {
             console.error("OpenAlex Fetch Error:", error);
-            const rawQuerySection = aiResponse.substring(aiResponse.indexOf('🔑') - 4);
-            aiResponse = aiResponse.replace(rawQuerySection, '');
+            if (aiResponse.includes('🔑')) {
+                const rawQuerySection = aiResponse.substring(aiResponse.indexOf('🔑') - 4);
+                aiResponse = aiResponse.replace(rawQuerySection, '');
+            }
         }
     }
 
