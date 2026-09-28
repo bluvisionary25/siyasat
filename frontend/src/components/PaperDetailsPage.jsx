@@ -93,15 +93,13 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
     try {
       if (p.file_path || p.pdf_url) {
         let downloadUrl = p.file_path || p.pdf_url;
+        const rawTitle = p.title || 'Thesis_Document';
+        const sanitizedTitle = rawTitle.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
+        
         if (downloadUrl.includes('res.cloudinary.com')) {
-          downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+          downloadUrl = downloadUrl.replace('/upload/', `/upload/fl_attachment:${sanitizedTitle}/`);
         }
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.setAttribute('download', '');
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        window.open(downloadUrl, '_blank');
       } else {
         const genRes = await fetch('https://siyasat-backend.onrender.com/api/theses/generate-pdf', {
           method: 'POST',
