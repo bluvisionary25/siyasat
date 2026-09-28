@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, Edit3, Trash2, ArrowLeft, Sparkles, Loader2, X, ChevronDown, AlertTriangle } from 'lucide-react';
 import Navbar from './Navbar';
 
@@ -31,7 +31,28 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
     abstract: `Postharvest losses in rice production remain a significant challenge in the Philippines, particularly due to inefficient and weather-dependent drying methods such as open sun drying. This study aimed to design, fabricate, and evaluate the performance of a solar-powered grain dryer intended for small- to medium-scale rice postharvest processing. The dryer was constructed using a solar collector, drying chamber, and auxiliary blower system to enhance airflow and heat distribution. Performance evaluation was conducted by measuring drying time, moisture reduction rate, drying efficiency, and grain quality parameters such as milling recovery and broken grain percentage, and comparing these against conventional sun-drying methods. Results showed that the solar-powered dryer significantly reduced drying time while maintaining higher grain quality and lower broken grain percentage compared to traditional sun drying. The study also assessed the system's cost-effectiveness and potential for adoption among small-scale farmers. Findings suggest that the developed solar dryer offers a viable, low-cost alternative for improving postharvest rice processing, reducing losses, and supporting sustainable agricultural practices in rural farming communities.`
   };
 
-  const p = paper || defaultPaper;
+  const [localPaper, setLocalPaper] = useState(paper || defaultPaper);
+
+  useEffect(() => {
+    // If the paper object from state is incomplete (missing abstract or file_path)
+    if (localPaper && localPaper.id && localPaper.id !== 1 && (!localPaper.abstract || (!localPaper.file_path && !localPaper.pdf_url))) {
+      const fetchCompletePaper = async () => {
+        try {
+          const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://siyasat-backend.onrender.com';
+          const res = await fetch(`${baseUrl}/api/theses/${localPaper.id}`);
+          const data = await res.json();
+          if (data.success && data.thesis) {
+            setLocalPaper(prev => ({ ...prev, ...data.thesis }));
+          }
+        } catch (err) {
+          console.error('Failed to fetch complete paper details', err);
+        }
+      };
+      fetchCompletePaper();
+    }
+  }, [localPaper]);
+
+  const p = localPaper;
 
   const handleRunAiAnalysis = async () => {
     setShowAiModal(true);
@@ -70,8 +91,17 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
   const handleDownload = async () => {
     setDownloading(true);
     try {
-      if (p.file_path) {
-        window.open(p.file_path, '_blank');
+      if (p.file_path || p.pdf_url) {
+        let downloadUrl = p.file_path || p.pdf_url;
+        if (downloadUrl.includes('res.cloudinary.com')) {
+          downloadUrl = downloadUrl.replace('/upload/', '/upload/fl_attachment/');
+        }
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.setAttribute('download', '');
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
       } else {
         const genRes = await fetch('https://siyasat-backend.onrender.com/api/theses/generate-pdf', {
           method: 'POST',

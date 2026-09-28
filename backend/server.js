@@ -539,6 +539,21 @@ function computeSimilarityAndCluster(targetThesis, allTheses) {
 }
 
 
+// Fetch Single Thesis by ID
+app.get('/api/theses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT * FROM theses WHERE id = $1', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Thesis not found' });
+    }
+    res.json({ success: true, thesis: result.rows[0] });
+  } catch (err) {
+    console.error('Fetch Single Thesis Error:', err);
+    res.status(500).json({ success: false, message: 'Failed to retrieve thesis details.' });
+  }
+});
+
 // Duplication Check API Endpoint
 app.post('/api/theses/check-duplicate', async (req, res) => {
   try {
