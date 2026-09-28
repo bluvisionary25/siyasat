@@ -1382,7 +1382,8 @@ OUTPUT FORMAT (Strict Markdown):
             
             const response = await fetch(openAlexUrl, {
                 headers: {
-                    'User-Agent': 'mailto:contact@siyasat.com'
+                    'User-Agent': 'mailto:contact@siyasat.com',
+                    'Authorization': `Bearer ${OPENALEX_API_KEY}`
                 },
                 signal: controller.signal
             });
