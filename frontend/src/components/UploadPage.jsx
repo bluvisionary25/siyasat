@@ -171,11 +171,10 @@ const UploadPage = ({ onNavigate, currentUser, onUploadSuccess }) => {
                   className="peer w-full px-4 py-3.5 rounded-xl border border-gray-400/80 text-gray-900 focus:outline-none focus:border-[#800000] text-xs font-semibold bg-transparent appearance-none cursor-pointer"
                 >
                   <option value="" disabled hidden></option>
-                  <option value="Land and Water Resources Engineering">Land and Water Resources Engineering</option>
-                  <option value="Farm Power and Machinery Engineering">Farm Power and Machinery Engineering</option>
-                  <option value="Agricultural Structures and Environmental Control Engineering">Agricultural Structures and Environmental Control Engineering</option>
-                  <option value="Agricultural and Biosystems Processing Engineering (Post-Harvest)">Agricultural and Biosystems Processing Engineering (Post-Harvest)</option>
-                  <option value="Agricultural Informatics and Automation">Agricultural Informatics and Automation</option>
+                  <option value="AB Machinery and Power Engineering">AB Machinery and Power Engineering</option>
+                  <option value="AB Land and Water Resources Engineering">AB Land and Water Resources Engineering</option>
+                  <option value="AB Structures and Environment Engineering">AB Structures and Environment Engineering</option>
+                  <option value="AB Process Engineering">AB Process Engineering</option>
                 </select>
                 <label 
                   htmlFor="upload-department" 
