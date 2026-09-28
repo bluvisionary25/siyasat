@@ -1319,12 +1319,12 @@ OUTPUT FORMAT (Strict Markdown):
 * **Methodological Blindspots:** [List outdated/overused tech and missing modern alternatives]
 * **Environmental & Scale Limitations:** [Highlight missing field-scale or real-world parameters]
 
-🔑 Global Search Query
-[Provide exactly ONE line containing 2 to 3 BROAD keywords based on the gaps (e.g. smart irrigation machine learning). Keep it broad to ensure high search volume. No quotes or extra text.]
-
 ### 📚 Theses Referenced
 * [Paper 1 Title]
-* [Paper 2 Title]`;
+* [Paper 2 Title]
+
+🔑 Global Search Query
+[Provide exactly ONE line containing 2 to 3 BROAD keywords based on the gaps (e.g. smart irrigation machine learning). Keep it broad to ensure high search volume. No quotes or extra text.]`;
 
     const groqKey = process.env.GROQ_API_KEY;
     if (!groqKey) {
@@ -1377,7 +1377,17 @@ OUTPUT FORMAT (Strict Markdown):
             const openAlexUrl = `https://api.openalex.org/works?search=${encodeURIComponent(searchQuery)}&per_page=10&sort=publication_year:desc`;
             console.log(`[OpenAlex] Fetching from URL: ${openAlexUrl}`);
             
-            const response = await fetch(openAlexUrl);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
+            
+            const response = await fetch(openAlexUrl, {
+                headers: {
+                    'User-Agent': 'mailto:contact@siyasat.com'
+                },
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            
             const data = await response.json();
             
             if (data.results && data.results.length > 0) {
@@ -1399,7 +1409,11 @@ OUTPUT FORMAT (Strict Markdown):
                 aiResponse = aiResponse.replace(rawQuerySection, '');
             }
         } catch (error) {
-            console.error("OpenAlex Fetch Error:", error);
+            if (error.name === 'AbortError') {
+                console.error("[OpenAlex] Fetch timed out after 4 seconds.");
+            } else {
+                console.error("OpenAlex Fetch Error:", error);
+            }
             if (aiResponse.includes('🔑')) {
                 const rawQuerySection = aiResponse.substring(aiResponse.indexOf('🔑') - 4);
                 aiResponse = aiResponse.replace(rawQuerySection, '');
