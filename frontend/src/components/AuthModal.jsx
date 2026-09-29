@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import SiyasatLogo from './SiyasatLogo';
 
 const AuthModal = ({ isOpen = true, onClose, onLoginSuccess, API_BASE = 'https://siyasat-backend.onrender.com/api' }) => {
@@ -8,6 +8,7 @@ const AuthModal = ({ isOpen = true, onClose, onLoginSuccess, API_BASE = 'https:/
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   if (!isOpen) return null;
 
@@ -92,8 +93,11 @@ const AuthModal = ({ isOpen = true, onClose, onLoginSuccess, API_BASE = 'https:/
                 </div>
 
                 <div className="relative">
-                  <input type="password" required id="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder=" " className="peer w-full px-4 py-3 rounded-xl border border-gray-400 text-gray-800 focus:outline-none focus:border-[#800000] text-sm bg-transparent" />
+                  <input type={showPassword ? "text" : "password"} required id="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder=" " className="peer w-full px-4 py-3 rounded-xl border border-gray-400 text-gray-800 focus:outline-none focus:border-[#800000] text-sm bg-transparent pr-12" />
                   <label htmlFor="password" className="absolute left-3 -top-2.5 bg-white px-2 text-xs font-bold text-[#800000]">Password</label>
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none">
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
                 </div>
 
                 <button type="submit" disabled={isLoading} className="w-full py-3 bg-[#F5B842] text-[#800000] font-bold text-base rounded-xl border border-[#d99e2b] shadow-sm cursor-pointer mt-4">
