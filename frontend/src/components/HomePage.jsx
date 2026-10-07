@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Search, Building2, Sprout, GraduationCap, Award, Upload, CheckCircle2, ChevronDown } from 'lucide-react';
 import Navbar from './Navbar';
 import AuthModal from './AuthModal';
@@ -235,6 +235,15 @@ const HomePage = ({
 }) => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const navigate = useNavigate();
+
+  const handleNavigation = (path) => {
+      navigate(path);
+      // Small timeout ensures the DOM updates before scrolling
+      setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+  };
 
   // Normalize role - strict unauthenticated guest default
   const effectiveRole = (propUserRole || currentUser?.role || '').toUpperCase();
@@ -611,42 +620,42 @@ const HomePage = ({
             <h3 className="text-xl font-bold text-[#7A0C0E] mb-3 tracking-tight">
               Quick Links
             </h3>
-            <ul className="text-xs sm:text-sm text-[#7A0C0E]/85 space-y-1.5 font-normal inline-block text-left">
+            <ul className="text-xs sm:text-sm text-[#7A0C0E]/85 space-y-1.5 font-normal inline-block text-left w-full">
               <li>
-                <Link
-                  to="/"
-                  onClick={() => window.scrollTo(0, 0)}
-                  className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all block"
+                <button
+                  type="button"
+                  onClick={() => handleNavigation('/')}
+                  className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all block text-left bg-transparent border-none p-0 outline-none w-full"
                 >
                   Home
-                </Link>
+                </button>
               </li>
               <li>
-                <Link
-                  to="/repository"
-                  onClick={() => window.scrollTo(0, 0)}
-                  className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all block"
+                <button
+                  type="button"
+                  onClick={() => handleNavigation('/repository')}
+                  className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all block text-left bg-transparent border-none p-0 outline-none w-full"
                 >
                   Repository
-                </Link>
+                </button>
               </li>
               <li>
-                <Link
-                  to="/about"
-                  onClick={() => window.scrollTo(0, 0)}
-                  className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all block"
+                <button
+                  type="button"
+                  onClick={() => handleNavigation('/about')}
+                  className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all block text-left bg-transparent border-none p-0 outline-none w-full"
                 >
                   About Us
-                </Link>
+                </button>
               </li>
               <li>
-                <Link
-                  to="/upload"
-                  onClick={() => window.scrollTo(0, 0)}
-                  className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all block"
+                <button
+                  type="button"
+                  onClick={() => handleNavigation('/upload')}
+                  className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all block text-left bg-transparent border-none p-0 outline-none w-full"
                 >
                   Upload
-                </Link>
+                </button>
               </li>
             </ul>
           </div>
