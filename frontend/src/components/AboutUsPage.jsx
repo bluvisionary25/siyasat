@@ -165,12 +165,9 @@ const AboutUsPage = ({ onNavigate, currentUser, onLoginClick }) => {
             ].map((member, index) => (
               <div 
                 key={index}
-                className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-[#800000]/30 transition-all duration-300 group flex flex-col items-center text-center"
+                className="bg-white border border-gray-100 rounded-3xl py-8 px-6 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-[#800000]/30 transition-all duration-300 group flex flex-col items-center justify-center text-center min-h-[160px]"
               >
-                <div className="w-16 h-16 rounded-full bg-[#FAF8F5] text-[#800000] flex items-center justify-center font-black text-xl mb-4 group-hover:bg-[#800000] group-hover:text-white transition-colors duration-300 shadow-inner">
-                  {member.initials}
-                </div>
-                <h3 className="text-sm font-bold text-gray-900 mb-1 leading-tight">{member.name}</h3>
+                <h3 className="text-sm font-bold text-gray-900 mb-2 leading-tight">{member.name}</h3>
                 <p className="text-xs font-bold text-[#800000] mb-3 bg-[#FAF8F5] px-3 py-1 rounded-full">{member.role}</p>
                 <p className="text-[11px] text-gray-500 leading-relaxed font-medium">{member.desc}</p>
               </div>
