@@ -249,16 +249,23 @@ app.delete('/api/admin/delete-user/:id', authenticateToken, authorizeRoles('ADMI
     // Delete from Postgres first to get the email/user
     const userRes = await pool.query('DELETE FROM users WHERE id = $1 RETURNING email', [id]);
     
-    // We should also delete from Supabase Auth if we can find the user.
-    // If id is not UUID, we have to find by email? Supabase deleteUser takes UUID.
-    // For safety, we try to delete by id.
-    const { error: authError } = await supabase.auth.admin.deleteUser(id);
-    if (authError) {
-       console.error('Supabase Delete User Error:', authError.message);
-    }
-
     if (userRes.rows.length === 0) {
       return res.status(404).json({ message: 'User not found in DB.' });
+    }
+
+    const userEmail = userRes.rows[0].email;
+
+    // We should also delete from Supabase Auth by finding their UUID via email
+    try {
+      const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+      if (!listError && users) {
+        const authUser = users.find(u => u.email === userEmail);
+        if (authUser) {
+          await supabase.auth.admin.deleteUser(authUser.id);
+        }
+      }
+    } catch (authCatchErr) {
+      console.error('Supabase Delete User Error:', authCatchErr);
     }
 
     res.json({ message: 'User deleted successfully.' });

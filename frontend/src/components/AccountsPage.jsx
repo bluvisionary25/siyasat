@@ -7,6 +7,7 @@ const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:50
 const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, onToggleStatus, onCreateUser, onDeleteUser }) => {
   const [openRoleDropdownId, setOpenRoleDropdownId] = useState(null);
   const [openBlockModalId, setOpenBlockModalId] = useState(null);
+  const [openDeleteModalId, setOpenDeleteModalId] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formData, setFormData] = useState({ full_name: '', email: '', password: '', role: 'Adviser' });
@@ -87,30 +88,29 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
     setUpdatingId(null);
   };
 
-  const handleDeleteUser = async (user) => {
-    if (window.confirm(`Are you sure you want to delete ${user.email}? This action cannot be undone.`)) {
-      setUpdatingId(user.id);
-      try {
-        const token = localStorage.getItem('siyasat_token') || '';
-        const res = await fetch(`${API_BASE}/admin/delete-user/${user.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (!res.ok) {
-          const data = await res.json();
-          alert(`Error: ${data.message}`);
-        } else {
-          setLocalUsers(prev => prev.filter(u => u.id !== user.id));
-          if (onDeleteUser) onDeleteUser(user.id);
+  const handleConfirmDelete = async (user) => {
+    setOpenDeleteModalId(null);
+    setUpdatingId(user.id);
+    try {
+      const token = localStorage.getItem('siyasat_token') || '';
+      const res = await fetch(`${API_BASE}/admin/delete-user/${user.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      } catch (err) {
-        alert('Network error while deleting user.');
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        alert(`Error: ${data.message}`);
+      } else {
+        setLocalUsers(prev => prev.filter(u => u.id !== user.id));
+        if (onDeleteUser) onDeleteUser(user.id);
       }
-      setUpdatingId(null);
+    } catch (err) {
+      alert('Network error while deleting user.');
     }
+    setUpdatingId(null);
   };
 
   return (
@@ -273,16 +273,48 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                             )}
                           </div>
 
-                          {/* Delete button */}
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteUser(user)}
-                            disabled={updatingId === user.id || isCurrentUser}
-                            className="px-4 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs rounded-full flex items-center transition-all shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 mr-1" />
-                            Delete
-                          </button>
+                          {/* Delete button & confirmation popover */}
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenDeleteModalId(openDeleteModalId === user.id ? null : user.id);
+                                setOpenRoleDropdownId(null);
+                                setOpenBlockModalId(null);
+                              }}
+                              disabled={updatingId === user.id || isCurrentUser}
+                              className="px-4 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs rounded-full flex items-center transition-all shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-1" />
+                              Delete
+                            </button>
+
+                            {openDeleteModalId === user.id && (
+                              <div className="absolute right-0 top-11 bg-white border border-red-200 rounded-2xl p-4 shadow-xl w-64 z-50 text-center space-y-3 animate-in fade-in zoom-in-95">
+                                <Trash2 className="w-6 h-6 text-red-600 mx-auto" />
+                                <p className="text-xs font-bold text-gray-800">
+                                  Are you sure you want to delete <span className="text-red-600 break-words">{user.email}</span>?
+                                </p>
+                                <p className="text-[10px] text-gray-500 font-semibold">This action cannot be undone.</p>
+                                <div className="flex justify-center space-x-2 pt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleConfirmDelete(user)}
+                                    className="px-6 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-full cursor-pointer transition-all"
+                                  >
+                                    Confirm Delete
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setOpenDeleteModalId(null)}
+                                    className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-full cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
 
                         </div>
                       </td>
