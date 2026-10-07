@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Building2, Sprout, GraduationCap, Award, Upload, CheckCircle2, ChevronDown } from 'lucide-react';
 import Navbar from './Navbar';
 import AuthModal from './AuthModal';
@@ -611,35 +612,41 @@ const HomePage = ({
               Quick Links
             </h3>
             <ul className="text-xs sm:text-sm text-[#7A0C0E]/85 space-y-1.5 font-normal inline-block text-left">
-              <li
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all"
-              >
-                Home
+              <li>
+                <Link
+                  to="/"
+                  onClick={() => window.scrollTo(0, 0)}
+                  className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all block"
+                >
+                  Home
+                </Link>
               </li>
-              <li
-                onClick={() => {
-                  const section = document.getElementById('repository');
-                  if (section) section.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all"
-              >
-                Repository
+              <li>
+                <Link
+                  to="/repository"
+                  onClick={() => window.scrollTo(0, 0)}
+                  className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all block"
+                >
+                  Repository
+                </Link>
               </li>
-              <li
-                onClick={() => {
-                  const section = document.getElementById('about');
-                  if (section) section.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all"
-              >
-                About Us
+              <li>
+                <Link
+                  to="/about"
+                  onClick={() => window.scrollTo(0, 0)}
+                  className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all block"
+                >
+                  About Us
+                </Link>
               </li>
-              <li
-                onClick={() => currentUser ? (onNavigate && onNavigate('upload')) : setIsAuthOpen(true)}
-                className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all"
-              >
-                Upload
+              <li>
+                <Link
+                  to="/upload"
+                  onClick={() => window.scrollTo(0, 0)}
+                  className="hover:text-[#7A0C0E] hover:font-semibold cursor-pointer transition-all block"
+                >
+                  Upload
+                </Link>
               </li>
             </ul>
           </div>
