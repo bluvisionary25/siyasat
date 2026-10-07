@@ -65,7 +65,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
 
     setUpdatingId('creating');
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('siyasat_token');
       if (!token) {
         console.warn('Warning: Missing JWT token. Request to create user aborted.');
         setFormError('Authentication error. Please log in again.');
@@ -104,7 +104,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
     if (window.confirm(`Are you sure you want to delete ${user.email}? This action cannot be undone.`)) {
       setUpdatingId(user.id);
       try {
-        const token = localStorage.getItem('token') || '';
+        const token = localStorage.getItem('siyasat_token') || '';
         const res = await fetch(`${API_BASE}/admin/delete-user/${user.id}`, {
           method: 'DELETE',
           headers: {
