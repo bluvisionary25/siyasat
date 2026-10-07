@@ -197,8 +197,8 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                                 setOpenBlockModalId(openBlockModalId === user.id ? null : user.id);
                                 setOpenRoleDropdownId(null);
                               }}
-                              disabled={updatingId === user.id}
-                              className={`px-7 py-1.5 border border-[#800000] text-[#800000] bg-white hover:bg-rose-50 font-bold text-xs rounded-full cursor-pointer transition-all shadow-2xs ${
+                              disabled={updatingId === user.id || isCurrentUser}
+                              className={`px-7 py-1.5 border border-[#800000] text-[#800000] bg-white hover:bg-rose-50 font-bold text-xs rounded-full cursor-pointer transition-all shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed ${
                                 isBlocked ? 'bg-red-50 text-red-700 border-red-300' : ''
                               }`}
                             >
@@ -241,8 +241,8 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                                 setOpenRoleDropdownId(openRoleDropdownId === user.id ? null : user.id);
                                 setOpenBlockModalId(null);
                               }}
-                              disabled={updatingId === user.id}
-                              className="px-5 py-1.5 bg-[#800000] hover:bg-[#660000] text-white font-bold text-xs rounded-full flex items-center space-x-1 cursor-pointer transition-all shadow-2xs"
+                              disabled={updatingId === user.id || isCurrentUser}
+                              className="px-5 py-1.5 bg-[#800000] hover:bg-[#660000] text-white font-bold text-xs rounded-full flex items-center space-x-1 cursor-pointer transition-all shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span>Change Role</span>
                               <ChevronDown className="w-3.5 h-3.5 ml-1 stroke-[2.5]" />
@@ -276,8 +276,8 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                           <button
                             type="button"
                             onClick={() => handleDeleteUser(user)}
-                            disabled={updatingId === user.id}
-                            className="px-4 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs rounded-full flex items-center transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                            disabled={updatingId === user.id || isCurrentUser}
+                            className="px-4 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs rounded-full flex items-center transition-all shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Trash2 className="w-3.5 h-3.5 mr-1" />
                             Delete
