@@ -391,7 +391,11 @@ const RepositoryPage = ({
                       <h3 className="text-xs md:text-sm font-extrabold text-[#800000] leading-snug pr-4 group-hover:underline">
                         {paper.title}
                       </h3>
-                      {(isAdmin || (isAdviser && currentUser?.id === paper.uploaded_by)) && (
+                      {(isAdmin || (isAdviser && (
+                        currentUser?.id === paper.uploaded_by || 
+                        currentUser?.email === paper.uploader_email || 
+                        currentUser?.full_name === paper.uploader_name
+                      ))) && (
                         <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"

@@ -189,7 +189,11 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
             </h1>
 
             {/* Admin actions */}
-            {isAdmin && (
+            {(isAdmin || (isAdviser && (
+              currentUser?.id === p.uploaded_by || 
+              currentUser?.email === p.uploader_email || 
+              currentUser?.full_name === p.uploader_name
+            ))) && (
               <div className="flex items-center space-x-2 shrink-0">
                 <button
                   type="button"
