@@ -12,20 +12,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
   const [formData, setFormData] = useState({ full_name: '', email: '', password: '', role: 'Adviser' });
   const [formError, setFormError] = useState('');
 
-  // Exact fallback mock account data matching the high-fidelity design screenshot
-  const defaultMockAccounts = [
-    { id: 1, email: 'downie.hailienichole@clsu.edu.ph', role: 'Admin', status: 'ACTIVE' },
-    { id: 2, email: 'japson.altheamyr@clsu2.edu.ph', role: 'Admin', status: 'ACTIVE' },
-    { id: 3, email: 'gervacio.rochelrey@clsu2.edu.ph', role: 'Adviser', status: 'ACTIVE' },
-    { id: 4, email: 'valdez.kiervin@clsu2.edu.ph', role: 'Adviser', status: 'ACTIVE' },
-    { id: 5, email: 'ortiz.johnlloyd@clsu2.edu.ph', role: 'Adviser', status: 'ACTIVE' },
-    { id: 6, email: 'ogena.angelo@clsu2.edu.ph', role: 'Adviser', status: 'ACTIVE' },
-    { id: 7, email: 'ruiz.princecathric@clsu2.edu.ph', role: 'Adviser', status: 'ACTIVE' },
-    { id: 8, email: 'esteban.emilio@clsu2.edu.ph', role: 'Adviser', status: 'ACTIVE' },
-    { id: 9, email: 'delacruz.juan@clsu2.edu.ph', role: 'Adviser', status: 'ACTIVE' },
-  ];
-
-  const [localUsers, setLocalUsers] = useState(usersList.length > 0 ? usersList : defaultMockAccounts);
+  const [localUsers, setLocalUsers] = useState(usersList);
 
   useEffect(() => {
     if (usersList.length > 0) {
@@ -58,8 +45,8 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
     e.preventDefault();
     setFormError('');
 
-    if (!formData.email.endsWith('@clsu.edu.ph')) {
-      setFormError('Access Denied: Only @clsu.edu.ph institutional emails are allowed.');
+    if (!formData.email.endsWith('@clsu.edu.ph') && !formData.email.endsWith('@clsu2.edu.ph')) {
+      setFormError('Access Denied: Only @clsu.edu.ph or @clsu2.edu.ph institutional emails are allowed.');
       return;
     }
 
@@ -330,7 +317,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                 <input required type="text" value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#800000] focus:border-[#800000] outline-none text-sm font-semibold" placeholder="Juan Dela Cruz" />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Email (@clsu.edu.ph)</label>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Email (@clsu.edu.ph or @clsu2.edu.ph)</label>
                 <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#800000] focus:border-[#800000] outline-none text-sm font-semibold" placeholder="juan@clsu.edu.ph" />
               </div>
               <div>

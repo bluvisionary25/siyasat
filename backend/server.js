@@ -189,8 +189,8 @@ app.post('/api/admin/create-user', authenticateToken, authorizeRoles('ADMIN'), a
 
   // Step 1: Security Check - Ensure the email strictly belongs to our institution (CLSU).
   // If someone tries to use a @gmail.com or @yahoo.com address, we block them immediately.
-  if (!email || !email.endsWith('@clsu.edu.ph')) {
-    return res.status(403).json({ message: 'Access Denied: Only @clsu.edu.ph institutional emails are allowed.' });
+  if (!email || (!email.endsWith('@clsu.edu.ph') && !email.endsWith('@clsu2.edu.ph'))) {
+    return res.status(403).json({ message: 'Access Denied: Only @clsu.edu.ph or @clsu2.edu.ph institutional emails are allowed.' });
   }
 
   try {
