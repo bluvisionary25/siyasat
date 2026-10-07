@@ -24,7 +24,6 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
     { id: 8, email: 'esteban.emilio@clsu2.edu.ph', role: 'Adviser', status: 'ACTIVE' },
     { id: 9, email: 'delacruz.juan@clsu2.edu.ph', role: 'Adviser', status: 'ACTIVE' },
   ];
-  ];
 
   const [localUsers, setLocalUsers] = useState(usersList.length > 0 ? usersList : defaultMockAccounts);
 
