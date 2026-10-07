@@ -162,6 +162,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                   const formattedRole = user.role 
                     ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase() 
                     : 'Adviser';
+                  const isCurrentUser = currentUser?.id === user.id || currentUser?.email === user.email;
 
                   return (
                     <tr 
