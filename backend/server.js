@@ -38,7 +38,12 @@ const OPENALEX_API_KEY = process.env.OPENALEX_API_KEY || 'upPzlnpgpo59ZgCVh351FG
 
 const supabaseUrl = process.env.SUPABASE_URL || 'https://lgvmnemfuietnoeqgnro.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || 'dummy_key';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 console.log("Groq Key Loaded:", process.env.GROQ_API_KEY ? "YES (starts with " + process.env.GROQ_API_KEY.substring(0, 8) + ")" : "NO - KEY MISSING");
 
