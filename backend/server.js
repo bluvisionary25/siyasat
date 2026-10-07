@@ -161,9 +161,100 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+const authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    const userRole = req.user && req.user.role ? req.user.role.toUpperCase() : '';
+    const upperRoles = roles.map(r => r.toUpperCase());
+    if (!userRole || !upperRoles.includes(userRole)) {
+      return res.status(403).json({ message: 'Access denied. Insufficient permissions.' });
+    }
+    next();
+  };
+};
+
 // -----------------------------------------------------------------------------
 // API Endpoints
 // -----------------------------------------------------------------------------
+
+// Admin Route: Create User
+app.post('/api/admin/create-user', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
+  const { email, password, full_name, role } = req.body;
+
+  if (!email || !email.endsWith('@clsu.edu.ph')) {
+    return res.status(403).json({ message: 'Access Denied: Only @clsu.edu.ph institutional emails are allowed.' });
+  }
+
+  try {
+    const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ message: 'User already exists with this email.' });
+    }
+
+    // Create in Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name, role }
+    });
+
+    if (authError) {
+      return res.status(400).json({ message: authError.message });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const assignedRole = role ? role.toUpperCase() : 'ADVISER';
+
+    // Insert into Postgres users table
+    // If id is SERIAL, this will work. If it's UUID, we should pass authData.user.id. We will omit id first.
+    let result;
+    try {
+        result = await pool.query(
+          'INSERT INTO users (id, email, password_hash, full_name, role, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+          [authData.user.id, email, passwordHash, full_name, assignedRole, 'ACTIVE']
+        );
+    } catch (dbErr) {
+        // Fallback if id is auto-increment integer
+        result = await pool.query(
+          'INSERT INTO users (email, password_hash, full_name, role, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+          [email, passwordHash, full_name, assignedRole, 'ACTIVE']
+        );
+    }
+
+    res.status(201).json({ message: 'User created successfully.', user: result.rows[0] });
+
+  } catch (err) {
+    console.error('Create User Error:', err);
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+});
+
+// Admin Route: Delete User
+app.delete('/api/admin/delete-user/:id', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Delete from Postgres first to get the email/user
+    const userRes = await pool.query('DELETE FROM users WHERE id = $1 RETURNING email', [id]);
+    
+    // We should also delete from Supabase Auth if we can find the user.
+    // If id is not UUID, we have to find by email? Supabase deleteUser takes UUID.
+    // For safety, we try to delete by id.
+    const { error: authError } = await supabase.auth.admin.deleteUser(id);
+    if (authError) {
+       console.error('Supabase Delete User Error:', authError.message);
+    }
+
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found in DB.' });
+    }
+
+    res.json({ message: 'User deleted successfully.' });
+  } catch (err) {
+    console.error('Delete User Error:', err);
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+});
 
 // Health Check
 app.get('/api/health', (req, res) => {

@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
-import { ChevronDown, Lock, ShieldAlert, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronDown, Lock, ShieldAlert, Check, X, Trash2 } from 'lucide-react';
 import Navbar from './Navbar';
 
-const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, onToggleStatus }) => {
+const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://siyasat-backend.onrender.com/api';
+
+const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, onToggleStatus, onCreateUser, onDeleteUser }) => {
   const [openRoleDropdownId, setOpenRoleDropdownId] = useState(null);
   const [openBlockModalId, setOpenBlockModalId] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ full_name: '', email: '', password: '', role: 'Adviser' });
+  const [formError, setFormError] = useState('');
 
   // Exact fallback mock account data matching the high-fidelity design screenshot
   const defaultMockAccounts = [
@@ -19,8 +24,17 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
     { id: 8, email: 'esteban.emilio@clsu2.edu.ph', role: 'Adviser', status: 'ACTIVE' },
     { id: 9, email: 'delacruz.juan@clsu2.edu.ph', role: 'Adviser', status: 'ACTIVE' },
   ];
+  ];
 
-  const displayList = usersList.length > 0 ? usersList : defaultMockAccounts;
+  const [localUsers, setLocalUsers] = useState(usersList.length > 0 ? usersList : defaultMockAccounts);
+
+  useEffect(() => {
+    if (usersList.length > 0) {
+      setLocalUsers(usersList);
+    }
+  }, [usersList]);
+
+  const displayList = localUsers;
 
   const handleRoleSelect = async (user, newRole) => {
     setOpenRoleDropdownId(null);
@@ -41,6 +55,71 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
     setUpdatingId(null);
   };
 
+  const handleAddSubmit = async (e) => {
+    e.preventDefault();
+    setFormError('');
+
+    if (!formData.email.endsWith('@clsu.edu.ph')) {
+      setFormError('Access Denied: Only @clsu.edu.ph institutional emails are allowed.');
+      return;
+    }
+
+    setUpdatingId('creating');
+    try {
+      const token = localStorage.getItem('token') || '';
+      const res = await fetch(`${API_BASE}/admin/create-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        setFormError(data.message || 'Failed to create account.');
+        setUpdatingId(null);
+        return;
+      }
+      
+      setLocalUsers(prev => [...prev, data.user]);
+      setIsAddModalOpen(false);
+      setFormData({ full_name: '', email: '', password: '', role: 'Adviser' });
+      if (onCreateUser) onCreateUser(data.user);
+    } catch (err) {
+      setFormError('Network error. Please try again later.');
+    }
+    setUpdatingId(null);
+  };
+
+  const handleDeleteUser = async (user) => {
+    if (window.confirm(`Are you sure you want to delete ${user.email}? This action cannot be undone.`)) {
+      setUpdatingId(user.id);
+      try {
+        const token = localStorage.getItem('token') || '';
+        const res = await fetch(`${API_BASE}/admin/delete-user/${user.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!res.ok) {
+          const data = await res.json();
+          alert(`Error: ${data.message}`);
+        } else {
+          setLocalUsers(prev => prev.filter(u => u.id !== user.id));
+          if (onDeleteUser) onDeleteUser(user.id);
+        }
+      } catch (err) {
+        alert('Network error while deleting user.');
+      }
+      setUpdatingId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FDFBF7] siyasat-contour-lines text-[#800000] relative overflow-x-hidden selection:bg-[#800000] selection:text-white pb-20">
 
@@ -55,9 +134,17 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
       <main className="max-w-6xl mx-auto px-6 pt-4 relative z-10 space-y-8">
 
         {/* Page title */}
-        <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center tracking-tight">
-          Account Management
-        </h1>
+        <div className="flex justify-between items-center flex-col md:flex-row space-y-4 md:space-y-0">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-[#800000] text-center md:text-left tracking-tight">
+            Account Management
+          </h1>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="px-6 py-2.5 bg-[#800000] hover:bg-[#660000] text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <span>+ Add Account</span>
+          </button>
+        </div>
 
         {/* Accounts table card */}
         <div className="bg-white/95 backdrop-blur-sm border border-gray-200/80 rounded-2xl shadow-sm overflow-visible">
@@ -192,6 +279,17 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                             )}
                           </div>
 
+                          {/* Delete button */}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={updatingId === user.id}
+                            className="px-4 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs rounded-full flex items-center transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1" />
+                            Delete
+                          </button>
+
                         </div>
                       </td>
                     </tr>
@@ -202,6 +300,52 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
           </div>
         </div>
       </main>
+
+      {/* Add Account Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative animate-in fade-in zoom-in-95">
+            <button 
+              onClick={() => { setIsAddModalOpen(false); setFormError(''); }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 cursor-pointer"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <h2 className="text-2xl font-extrabold text-[#800000] mb-6">Create New Account</h2>
+            
+            <form onSubmit={handleAddSubmit} className="space-y-4 text-left">
+              {formError && (
+                <div className="p-3 bg-red-50 text-red-700 text-sm font-bold rounded-lg border border-red-200">
+                  {formError}
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Full Name</label>
+                <input required type="text" value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#800000] focus:border-[#800000] outline-none text-sm font-semibold" placeholder="Juan Dela Cruz" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Email (@clsu.edu.ph)</label>
+                <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#800000] focus:border-[#800000] outline-none text-sm font-semibold" placeholder="juan@clsu.edu.ph" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Password</label>
+                <input required type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#800000] focus:border-[#800000] outline-none text-sm font-semibold" placeholder="••••••••" minLength={6} />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Role</label>
+                <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#800000] focus:border-[#800000] outline-none text-sm font-bold text-gray-800">
+                  <option value="Admin">Admin</option>
+                  <option value="Adviser">Adviser</option>
+                  <option value="Guest">Guest</option>
+                </select>
+              </div>
+              <button type="submit" disabled={updatingId === 'creating'} className="w-full mt-6 py-3 bg-[#800000] hover:bg-[#660000] text-white font-extrabold rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-50">
+                {updatingId === 'creating' ? 'Creating...' : 'Create Account'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
