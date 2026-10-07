@@ -133,9 +133,9 @@ const RepositoryPage = ({
     const keywordsStr = (Array.isArray(p.keywords) ? p.keywords.join(' ') : (p.keywords || '')).toLowerCase();
     const branchStr = (p.department || p.branch || '').toLowerCase();
 
-    // 1. Direct case-insensitive strict word boundary match against title, abstract, or keywords
+    // 1. Direct case-insensitive strict word boundary match against title, abstract, keywords, or authors
     const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const combinedText = ` ${titleStr} ${abstractStr} ${keywordsStr} `;
+    const combinedText = ` ${titleStr} ${authorStr} ${abstractStr} ${keywordsStr} `;
     
     const tokens = rawQ.replace(/[,;|]/g, ' ').split(/\s+/).filter(t => t.length > 0);
     if (tokens.length > 0) {
