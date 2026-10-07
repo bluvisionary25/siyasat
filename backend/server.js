@@ -768,8 +768,19 @@ app.post('/api/theses', authenticateToken, upload.single('file'), async (req, re
 });
 
 // 4.1 Update Thesis Route
-app.put('/api/theses/:id', authenticateToken, authorizeRoles('ADMIN'), upload.single('file'), async (req, res) => {
+app.put('/api/theses/:id', authenticateToken, authorizeRoles('ADMIN', 'ADVISER'), upload.single('file'), async (req, res) => {
   try {
+    const checkRes = await pool.query('SELECT uploaded_by FROM theses WHERE id = $1', [req.params.id]);
+    if (checkRes.rows.length === 0) {
+      return res.status(404).json({ message: 'Thesis not found.' });
+    }
+    const thesis = checkRes.rows[0];
+
+    // Ownership check for Adviser
+    if (req.user.role === 'ADVISER' && thesis.uploaded_by !== req.user.id) {
+      return res.status(403).json({ message: 'Access Denied: You can only edit papers you have uploaded.' });
+    }
+
     const { title, author, year, keywords, abstract, department } = req.body;
     
     // Auto re-run evaluation if title or abstract changes
