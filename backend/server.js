@@ -768,7 +768,7 @@ app.post('/api/theses', authenticateToken, upload.single('file'), async (req, re
 });
 
 // 4.1 Update Thesis Route
-app.put('/api/theses/:id', authenticateToken, upload.single('file'), async (req, res) => {
+app.put('/api/theses/:id', authenticateToken, authorizeRoles('ADMIN'), upload.single('file'), async (req, res) => {
   try {
     const { title, author, year, keywords, abstract, department } = req.body;
     
@@ -1603,11 +1603,7 @@ app.get('/api/admin/users', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/admin/users/:id/status', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ message: 'Administrator access required.' });
-  }
-
+app.put('/api/admin/users/:id/status', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
   const { status } = req.body;
   try {
     await pool.query('UPDATE users SET status = $1 WHERE id = $2', [status, req.params.id]);
@@ -1618,10 +1614,7 @@ app.put('/api/admin/users/:id/status', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/admin/users/:id/role', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'ADMIN') {
-    return res.status(403).json({ message: 'Administrator access required.' });
-  }
+app.put('/api/admin/users/:id/role', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
 
   const { role } = req.body;
   try {

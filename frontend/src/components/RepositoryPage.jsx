@@ -391,7 +391,7 @@ const RepositoryPage = ({
                       <h3 className="text-xs md:text-sm font-extrabold text-[#800000] leading-snug pr-4 group-hover:underline">
                         {paper.title}
                       </h3>
-                      {isElevatedUser && (
+                      {isAdmin && (
                         <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"
@@ -414,19 +414,17 @@ const RepositoryPage = ({
                                 <Edit3 className="w-3.5 h-3.5 text-[#800000]" />
                                 <span>Edit</span>
                               </button>
-                              {isAdmin && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setOpenCardMenuId(null);
-                                    setPaperToDelete(paper);
-                                  }}
-                                  className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-rose-50 text-red-600 flex items-center space-x-2 cursor-pointer"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                                  <span>Delete</span>
-                                </button>
-                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenCardMenuId(null);
+                                  setPaperToDelete(paper);
+                                }}
+                                className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-rose-50 text-red-600 flex items-center space-x-2 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                                <span>Delete</span>
+                              </button>
                             </div>
                           )}
                         </div>
