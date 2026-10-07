@@ -335,7 +335,6 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                 <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#800000] focus:border-[#800000] outline-none text-sm font-bold text-gray-800">
                   <option value="Admin">Admin</option>
                   <option value="Adviser">Adviser</option>
-                  <option value="Guest">Guest</option>
                 </select>
               </div>
               <button type="submit" disabled={updatingId === 'creating'} className="w-full mt-6 py-3 bg-[#800000] hover:bg-[#660000] text-white font-extrabold rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-50">
