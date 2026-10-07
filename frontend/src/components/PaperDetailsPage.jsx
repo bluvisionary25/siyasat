@@ -203,14 +203,16 @@ const PaperDetailsPage = ({ paper, onNavigate, currentUser, onDeletePaper, onLog
                   <Edit3 className="w-3.5 h-3.5" />
                   <span>Edit</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-full flex items-center space-x-1.5 cursor-pointer transition-all shadow-2xs"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete</span>
-                </button>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-full flex items-center space-x-1.5 cursor-pointer transition-all shadow-2xs"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
