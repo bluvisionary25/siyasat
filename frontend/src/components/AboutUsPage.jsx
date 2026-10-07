@@ -103,36 +103,78 @@ const AboutUsPage = ({ onNavigate, currentUser, onLoginClick }) => {
           </p>
         </section>
 
-        {/* Creators */}
-        <section className="space-y-4 pt-4 border-t border-gray-200/50 mt-8 pb-8">
-          <h2 className="text-xl font-extrabold text-[#800000] text-center">
-            Creators
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-center max-w-3xl mx-auto">
-            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
-              <p className="text-sm font-semibold text-gray-800">Downie, Hailie Nichole S.</p>
-            </div>
-            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
-              <p className="text-sm font-semibold text-gray-800">Esteban, Emilio</p>
-            </div>
-            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
-              <p className="text-sm font-semibold text-gray-800">Gervacio, Rochel Rey G.</p>
-            </div>
-            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
-              <p className="text-sm font-semibold text-gray-800">Japson, Althea Myr C.</p>
-            </div>
-            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
-              <p className="text-sm font-semibold text-gray-800">Ogena, Angelo</p>
-            </div>
-            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
-              <p className="text-sm font-semibold text-gray-800">Ortiz, John Lloyd</p>
-            </div>
-            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
-              <p className="text-sm font-semibold text-gray-800">Ruiz, Prince Cathric</p>
-            </div>
-            <div className="bg-[#FAF8F5]/80 rounded-2xl py-3 px-4 shadow-sm border border-gray-100">
-              <p className="text-sm font-semibold text-gray-800">Valdez, Kiervin C.</p>
-            </div>
+        {/* Meet the Team */}
+        <section className="space-y-8 pt-8 border-t border-gray-200/50 mt-12 pb-12">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-extrabold text-[#800000]">
+              Meet the Team
+            </h2>
+            <p className="text-sm text-gray-600 font-medium">The minds behind the SIYASAT System.</p>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {[
+              {
+                name: "Hailie Nichole S. Downie",
+                role: "Project Leader",
+                desc: "Team coordination & milestones",
+                initials: "HD"
+              },
+              {
+                name: "Prince Cathric Ruiz",
+                role: "Technical Lead",
+                desc: "System architecture, full-stack dev & AI integration",
+                initials: "PR"
+              },
+              {
+                name: "John Lloyd Ortiz",
+                role: "Frontend Developer",
+                desc: "React components & UI layout",
+                initials: "JO"
+              },
+              {
+                name: "Rochel Rey Gervacio",
+                role: "UI/UX Lead",
+                desc: "Wireframes & UI design",
+                initials: "RG"
+              },
+              {
+                name: "Althea Myr Japson",
+                role: "QA Lead",
+                desc: "Validation & quality standards",
+                initials: "AJ"
+              },
+              {
+                name: "Emilio Esteban",
+                role: "QA & Debugging",
+                desc: "System testing & bug tracking",
+                initials: "EE"
+              },
+              {
+                name: "Angelo Ogena",
+                role: "Documentation Lead",
+                desc: "Technical & project docs",
+                initials: "AO"
+              },
+              {
+                name: "Kiervin Valdez",
+                role: "Documentation Lead",
+                desc: "Technical & project docs",
+                initials: "KV"
+              }
+            ].map((member, index) => (
+              <div 
+                key={index}
+                className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-[#800000]/30 transition-all duration-300 group flex flex-col items-center text-center"
+              >
+                <div className="w-16 h-16 rounded-full bg-[#FAF8F5] text-[#800000] flex items-center justify-center font-black text-xl mb-4 group-hover:bg-[#800000] group-hover:text-white transition-colors duration-300 shadow-inner">
+                  {member.initials}
+                </div>
+                <h3 className="text-sm font-bold text-gray-900 mb-1 leading-tight">{member.name}</h3>
+                <p className="text-xs font-bold text-[#800000] mb-3 bg-[#FAF8F5] px-3 py-1 rounded-full">{member.role}</p>
+                <p className="text-[11px] text-gray-500 leading-relaxed font-medium">{member.desc}</p>
+              </div>
+            ))}
           </div>
         </section>
 

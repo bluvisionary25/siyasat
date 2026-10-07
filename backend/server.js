@@ -177,20 +177,26 @@ const authorizeRoles = (...roles) => {
 // -----------------------------------------------------------------------------
 
 // Admin Route: Create User
+// 👨‍🏫 What this does: Allows an Admin to securely create a new account for a faculty member.
+// It bypasses public signups and directly registers the user in Supabase and our database.
 app.post('/api/admin/create-user', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
   const { email, password, full_name, role } = req.body;
 
+  // Step 1: Security Check - Ensure the email strictly belongs to our institution (CLSU).
+  // If someone tries to use a @gmail.com or @yahoo.com address, we block them immediately.
   if (!email || !email.endsWith('@clsu.edu.ph')) {
     return res.status(403).json({ message: 'Access Denied: Only @clsu.edu.ph institutional emails are allowed.' });
   }
 
   try {
+    // Step 2: Check our database to see if this email is already registered.
     const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ message: 'User already exists with this email.' });
     }
 
-    // Create in Supabase Auth
+    // Step 3: Create the user in our Supabase Authentication system.
+    // We use the 'Admin API' here so that the current Admin doing the creation isn't accidentally logged out.
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -202,11 +208,11 @@ app.post('/api/admin/create-user', authenticateToken, authorizeRoles('ADMIN'), a
       return res.status(400).json({ message: authError.message });
     }
 
+    // Step 4: Encrypt (hash) the user's password for secure storage in our own database.
     const passwordHash = await bcrypt.hash(password, 10);
     const assignedRole = role ? role.toUpperCase() : 'ADVISER';
 
-    // Insert into Postgres users table
-    // If id is SERIAL, this will work. If it's UUID, we should pass authData.user.id. We will omit id first.
+    // Step 5: Insert the new user's details into our local 'users' table.
     let result;
     try {
         result = await pool.query(
@@ -214,13 +220,14 @@ app.post('/api/admin/create-user', authenticateToken, authorizeRoles('ADMIN'), a
           [authData.user.id, email, passwordHash, full_name, assignedRole, 'ACTIVE']
         );
     } catch (dbErr) {
-        // Fallback if id is auto-increment integer
+        // Fallback in case our table uses auto-incrementing numbers instead of Supabase's unique IDs.
         result = await pool.query(
           'INSERT INTO users (email, password_hash, full_name, role, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
           [email, passwordHash, full_name, assignedRole, 'ACTIVE']
         );
     }
 
+    // Done! Tell the frontend the account was successfully created.
     res.status(201).json({ message: 'User created successfully.', user: result.rows[0] });
 
   } catch (err) {
@@ -264,10 +271,13 @@ app.get('/api/health', (req, res) => {
 // Registration disabled - open public access, login reserved for advisers/admins.
 
 // 2. User Login with 5-Attempt Lockout
+// 🔐 What this does: Verifies user credentials and temporarily blocks them if they fail 5 times.
+// This prevents hackers from using "brute force" to guess passwords.
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    // Step 1: Look up the user in the database by their email.
     const userRes = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userRes.rows.length === 0) {
       return res.status(400).json({ message: 'Invalid credentials.' });
@@ -275,12 +285,12 @@ app.post('/api/auth/login', async (req, res) => {
 
     const user = userRes.rows[0];
 
-    // Check account status
+    // Step 2: Check if the Admin has permanently blocked this account.
     if (user.status === 'BLOCKED') {
       return res.status(403).json({ message: 'Account is blocked. Contact administrator.' });
     }
 
-    // Check temporary lockout
+    // Step 3: Check if the user is currently serving a temporary 15-minute lockout penalty.
     if (user.lockout_until && new Date(user.lockout_until) > new Date()) {
       const remainingTime = Math.ceil((new Date(user.lockout_until) - new Date()) / 1000 / 60);
       return res.status(403).json({
@@ -288,16 +298,17 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
-    // Verify Password
+    // Step 4: Compare the typed password with the encrypted password in our database.
     const isMatch = await bcrypt.compare(password, user.password_hash);
 
+    // Step 5: What happens if they typed the WRONG password?
     if (!isMatch) {
       const attempts = (user.failed_login_attempts || 0) + 1;
       let lockoutUntil = null;
 
+      // If they failed 5 times, calculate a lockout time 15 minutes into the future.
       if (attempts >= 5) {
-        // Lock for 15 minutes after 5 failed attempts
-        lockoutUntil = new Date(Date.now() + 15 * 60 * 1000);
+        lockoutUntil = new Date(Date.now() + 15 * 60 * 1000); // Current time + 15 mins
         await pool.query(
           'UPDATE users SET failed_login_attempts = $1, lockout_until = $2 WHERE id = $3',
           [0, lockoutUntil, user.id]
@@ -307,24 +318,27 @@ app.post('/api/auth/login', async (req, res) => {
         });
       }
 
+      // If they haven't hit 5 yet, just update their failure count.
       await pool.query('UPDATE users SET failed_login_attempts = $1 WHERE id = $2', [attempts, user.id]);
       return res.status(400).json({
         message: `Invalid credentials. ${5 - attempts} attempt(s) remaining before lockout.`
       });
     }
 
-    // Reset failed attempts on success
+    // Step 6: Success! They typed the correct password. Reset their failure count back to 0.
     await pool.query(
       'UPDATE users SET failed_login_attempts = 0, lockout_until = NULL WHERE id = $1',
       [user.id]
     );
 
+    // Step 7: Create a digital "VIP pass" (JWT Token) that proves who they are for the next 8 hours.
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, full_name: user.full_name },
       JWT_SECRET,
       { expiresIn: '8h' }
     );
 
+    // Send the pass and user info back to the frontend.
     res.json({
       message: 'Login successful',
       token,
@@ -678,15 +692,19 @@ app.post('/api/theses/check-duplicate', async (req, res) => {
 });
 
 // 4. Upload New Thesis Route (Authenticated Admins & Advisers)
+// 📁 What this does: Handles uploading a PDF thesis, checks for duplicates, saves it to the cloud, and categorizes it.
 app.post('/api/theses', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     const { title, author, year, keywords, abstract, department, ignoreDuplicate } = req.body;
 
+    // Step 1: Ensure a PDF file was actually attached to the request.
     if (!req.file) {
       return res.status(400).json({ message: 'Please attach a valid PDF file under 25 MB.' });
     }
 
-    // Run Duplication Checker unless user clicked "Proceed Anyway" (ignoreDuplicate === 'true')
+    // Step 2: Anti-Plagiarism / Duplicate Check.
+    // We scan existing papers to see if something with a similar title/abstract is already in the system.
+    // The user can override this if they clicked "Proceed Anyway" (ignoreDuplicate).
     if (ignoreDuplicate !== 'true' && ignoreDuplicate !== true) {
       const dupResult = await checkForDuplicateThesis(title, abstract);
       if (dupResult.isDuplicate) {
@@ -698,24 +716,28 @@ app.post('/api/theses', authenticateToken, upload.single('file'), async (req, re
       }
     }
 
-    // Cloudinary Upload
+    // Step 3: Cloud Storage Upload.
+    // We send the PDF to Cloudinary (our online file storage) so it doesn't slow down our own server.
     let publicUrl = '';
     const fileName = `${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`;
     try {
       const result = await uploadToCloudinary(req.file.buffer, {
         folder: 'siyasat-repository',
         public_id: fileName,
-        resource_type: 'auto'
+        resource_type: 'auto' // automatically detect that it's a PDF
       });
-      publicUrl = result.secure_url;
+      publicUrl = result.secure_url; // This is the link we will use to download/view the file later.
     } catch (error) {
       console.error('Cloudinary upload error:', error);
       return res.status(500).json({ message: 'Failed to upload file to storage.' });
     }
 
+    // Step 4: AI Clustering.
+    // We compare this new paper's abstract/keywords against existing papers to automatically group it (e.g. "Irrigation", "Machinery").
     const existingRes = await pool.query('SELECT * FROM theses');
     const clusterResult = computeSimilarityAndCluster({ title, abstract, keywords }, existingRes.rows);
 
+    // Step 5: Save everything into our Database.
     const query = `
       INSERT INTO theses (title, abstract, author, year, keywords, department, file_path, uploaded_by, cluster_group, similarity_score, matched_thesis_id)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -736,6 +758,8 @@ app.post('/api/theses', authenticateToken, upload.single('file'), async (req, re
     ];
 
     const result = await pool.query(query, values);
+    
+    // Done! Return the newly saved paper info back to the frontend.
     res.status(201).json({ message: 'Thesis successfully uploaded to repository.', thesis: result.rows[0] });
   } catch (err) {
     console.error('Upload Error:', err);
@@ -1286,8 +1310,11 @@ app.post('/api/analyze-single-gap', async (req, res) => {
   }
 });
 
+// AI Gap Analysis Route
+// 🤖 What this does: Reads the PDF of a specific thesis, sends it to an AI (Groq/OpenAI), and generates a report on research gaps.
 app.post('/api/theses/:id/analyze-gap', authenticateToken, async (req, res) => {
   try {
+    // Step 1: Find the thesis in our database using the ID from the URL.
     const thesisRes = await pool.query('SELECT * FROM theses WHERE id = $1', [req.params.id]);
     if (thesisRes.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Thesis record not found.' });
@@ -1295,6 +1322,8 @@ app.post('/api/theses/:id/analyze-gap', authenticateToken, async (req, res) => {
 
     const thesis = thesisRes.rows[0];
     let pdfText = '';
+    
+    // Step 2: Download the PDF from the cloud and extract its text.
     if (thesis.file_path && thesis.file_path.startsWith('http')) {
       try {
         const pdfResponse = await fetch(thesis.file_path);
@@ -1302,13 +1331,14 @@ app.post('/api/theses/:id/analyze-gap', authenticateToken, async (req, res) => {
           const arrayBuffer = await pdfResponse.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
           const pdfData = await pdfParse(buffer);
-          pdfText = pdfData.text;
+          pdfText = pdfData.text; // We pull out the raw text to feed the AI.
         }
       } catch (e) {
         console.error('Error parsing PDF from Supabase:', e);
       }
     }
 
+    // Step 3: Give the AI strict instructions (the "System Prompt") on how to act.
     const systemPrompt = `You are a senior thesis panelist and peer reviewer in Agricultural and Biosystems Engineering (ABE).
 Analyze this single thesis based strictly on its Title, Keywords, and Abstract. Identify the narrow constraints of the study and propose precise next-step extensions.
 
@@ -1322,6 +1352,7 @@ OUTPUT FORMAT (Strict Markdown):
 ### 📚 Reference Scanned
 * [Insert the exact Title of the thesis you just analyzed]`;
 
+    // Step 4: Package the thesis details and the first 5000 characters of the PDF text.
     const userMessageContent = `Title: ${thesis.title || 'N/A'}\nKeywords: ${thesis.keywords || 'N/A'}\nAbstract: ${thesis.abstract || 'N/A'}\nFull Text: ${pdfText.substring(0, 5000)}`;
 
     const groqKey = process.env.GROQ_API_KEY;
@@ -1329,6 +1360,7 @@ OUTPUT FORMAT (Strict Markdown):
       return res.status(500).json({ success: false, message: 'AI processing key is missing.' });
     }
 
+    // Step 5: Send everything to the Groq AI servers and wait for the "smart" analysis.
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -1341,7 +1373,7 @@ OUTPUT FORMAT (Strict Markdown):
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessageContent }
         ],
-        temperature: 0.3
+        temperature: 0.3 // Low temperature means the AI will be more strict and less creative.
       })
     });
 
@@ -1351,6 +1383,7 @@ OUTPUT FORMAT (Strict Markdown):
       return res.status(response.status).json({ success: false, message: 'AI processing request failed.' });
     }
 
+    // Step 6: Parse the AI's response and send the Markdown report back to the frontend to display!
     const data = await response.json();
     const markdownResult = data.choices[0].message.content;
 
