@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import HomePage from './components/HomePage';
 import RepositoryPage from './components/RepositoryPage';
 import PaperDetailsPage from './components/PaperDetailsPage';
@@ -106,6 +107,24 @@ function App() {
     const [theses, setTheses] = useState([]);
     const [usersList, setUsersList] = useState([]);
     const [toastMessage, setToastMessage] = useState(null);
+
+    const { pathname } = useLocation();
+
+    useEffect(() => {
+        // Fix render desync by synchronizing custom state with React Router history
+        const path = pathname.replace(/^\/+|\/+$/g, '').toLowerCase() || 'home';
+        let page = path;
+        if (page === 'repo') page = 'repository';
+        if (page === 'about-us' || page === 'aboutus') page = 'about';
+        if (page === 'paper' || page === 'details') page = 'paper-details';
+        if (page === 'accounts') page = 'users';
+
+        const validPages = ['home', 'repository', 'about', 'paper-details', 'upload', 'users', 'profile', 'login'];
+        const resolvedPage = validPages.includes(page) ? page : 'home';
+        
+        setCurrentPage(resolvedPage);
+        window.scrollTo(0, 0);
+    }, [pathname]);
 
     const showToast = (msg) => {
         setToastMessage(msg);
