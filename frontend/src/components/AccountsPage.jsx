@@ -45,7 +45,6 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
 
   const handleToggleLock = async (user) => {
     setUpdatingId(user.id);
-    const newLockStatus = !user.is_locked;
     try {
       const token = localStorage.getItem('siyasat_token') || '';
       const res = await fetch(`${API_BASE}/admin/users/${user.id}/lock`, {
@@ -54,14 +53,14 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ is_locked: newLockStatus })
+        body: JSON.stringify({ action: 'unlock' })
       });
       
       if (!res.ok) {
         const data = await res.json();
         alert(`Error: ${data.message || 'Failed to update lock status'}`);
       } else {
-        setLocalUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_locked: newLockStatus } : u));
+        setLocalUsers(prev => prev.map(u => u.id === user.id ? { ...u, lockout_until: null } : u));
       }
     } catch (err) {
       alert('Network error while updating lock status.');
@@ -190,6 +189,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                     ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase() 
                     : 'Adviser';
                   const isCurrentUser = currentUser?.id === user.id || currentUser?.email === user.email;
+                  const isLocked = user.lockout_until && new Date(user.lockout_until) > new Date();
 
                   return (
                     <tr 
@@ -206,7 +206,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                             Blocked
                           </span>
                         )}
-                        {user.is_locked ? (
+                        {isLocked ? (
                           <span className="ml-2 text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold inline-block">
                             Locked
                           </span>
@@ -310,7 +310,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                           </div>
 
                           {/* Unlock Account button (only visible if locked) */}
-                          {user.is_locked && (
+                          {isLocked && (
                             <button
                               type="button"
                               onClick={() => handleToggleLock(user)}
