@@ -1618,7 +1618,7 @@ app.get('/api/admin/users', authenticateToken, async (req, res) => {
   }
 
   try {
-    const users = await pool.query('SELECT id, full_name, email, role, status, created_at FROM users ORDER BY id ASC');
+    const users = await pool.query('SELECT id, full_name, email, role, status, created_at, lockout_until FROM users ORDER BY id ASC');
     res.json({ users: users.rows });
   } catch (err) {
     console.error('Fetch Users Error:', err);
@@ -1628,12 +1628,25 @@ app.get('/api/admin/users', authenticateToken, async (req, res) => {
 
 app.put('/api/admin/users/:id/status', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
   const { status } = req.body;
+  const userId = req.params.id;
+
   try {
-    await pool.query('UPDATE users SET status = $1 WHERE id = $2', [status, req.params.id]);
-    res.json({ message: `User status updated to ${status}.` });
+    await pool.query('UPDATE users SET status = $1 WHERE id = $2', [status, userId]);
+    res.json({ message: 'User status updated successfully.' });
   } catch (err) {
     console.error('Update Status Error:', err);
     res.status(500).json({ message: 'Failed to update user status.' });
+  }
+});
+
+app.patch('/api/admin/users/:id/lock', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
+  const userId = req.params.id;
+  try {
+    await pool.query('UPDATE users SET failed_login_attempts = 0, lockout_until = NULL WHERE id = $1', [userId]);
+    res.json({ message: 'User account unlocked successfully.' });
+  } catch (err) {
+    console.error('Unlock User Error:', err);
+    res.status(500).json({ message: 'Failed to unlock user account.' });
   }
 });
 
