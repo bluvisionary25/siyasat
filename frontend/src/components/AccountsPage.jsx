@@ -309,20 +309,18 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                             )}
                           </div>
 
-                          {/* Lock Account button */}
-                          <button
-                            type="button"
-                            onClick={() => handleToggleLock(user)}
-                            disabled={updatingId === user.id || isCurrentUser}
-                            className={`px-4 py-1.5 border font-bold text-xs rounded-full flex items-center transition-all shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                              user.is_locked 
-                                ? 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100'
-                                : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100'
-                            }`}
-                          >
-                            {user.is_locked ? <Unlock className="w-3.5 h-3.5 mr-1" /> : <Lock className="w-3.5 h-3.5 mr-1" />}
-                            {user.is_locked ? 'Unlock Account' : 'Lock Account'}
-                          </button>
+                          {/* Unlock Account button (only visible if locked) */}
+                          {user.is_locked && (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleLock(user)}
+                              disabled={updatingId === user.id || isCurrentUser}
+                              className="px-4 py-1.5 border font-bold text-xs rounded-full flex items-center transition-all shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100"
+                            >
+                              <Unlock className="w-3.5 h-3.5 mr-1" />
+                              Unlock Account
+                            </button>
+                          )}
 
                           {/* Delete button & confirmation popover */}
                           <div className="relative">
