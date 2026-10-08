@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Lock, ShieldAlert, Check, X, Trash2, Eye, EyeOff } from 'lucide-react';
+import { ChevronDown, Lock, ShieldAlert, Check, X, Trash2, Eye, EyeOff, Unlock } from 'lucide-react';
 import Navbar from './Navbar';
 
 const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://siyasat-backend.onrender.com/api';
@@ -39,6 +39,32 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
     const targetStatus = user.status === 'BLOCKED' ? 'ACTIVE' : 'BLOCKED';
     if (onToggleStatus) {
       await onToggleStatus(user.id, targetStatus);
+    }
+    setUpdatingId(null);
+  };
+
+  const handleToggleLock = async (user) => {
+    setUpdatingId(user.id);
+    const newLockStatus = !user.is_locked;
+    try {
+      const token = localStorage.getItem('siyasat_token') || '';
+      const res = await fetch(`${API_BASE}/admin/users/${user.id}/lock`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ is_locked: newLockStatus })
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        alert(`Error: ${data.message || 'Failed to update lock status'}`);
+      } else {
+        setLocalUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_locked: newLockStatus } : u));
+      }
+    } catch (err) {
+      alert('Network error while updating lock status.');
     }
     setUpdatingId(null);
   };
@@ -176,8 +202,17 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                       <td className="p-3.5 pl-8 text-center font-bold border-r border-gray-100 text-gray-800 text-xs">
                         {user.email}
                         {isBlocked && (
-                          <span className="ml-2 text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">
+                          <span className="ml-2 text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold inline-block">
                             Blocked
+                          </span>
+                        )}
+                        {user.is_locked ? (
+                          <span className="ml-2 text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold inline-block">
+                            Locked
+                          </span>
+                        ) : (
+                          <span className="ml-2 text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold inline-block">
+                            Active
                           </span>
                         )}
                       </td>
@@ -273,6 +308,21 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                               </div>
                             )}
                           </div>
+
+                          {/* Lock Account button */}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleLock(user)}
+                            disabled={updatingId === user.id || isCurrentUser}
+                            className={`px-4 py-1.5 border font-bold text-xs rounded-full flex items-center transition-all shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                              user.is_locked 
+                                ? 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100'
+                                : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100'
+                            }`}
+                          >
+                            {user.is_locked ? <Unlock className="w-3.5 h-3.5 mr-1" /> : <Lock className="w-3.5 h-3.5 mr-1" />}
+                            {user.is_locked ? 'Unlock Account' : 'Lock Account'}
+                          </button>
 
                           {/* Delete button & confirmation popover */}
                           <div className="relative">
