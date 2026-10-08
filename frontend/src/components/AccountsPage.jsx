@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Lock, ShieldAlert, Check, X, Trash2, Eye, EyeOff, Unlock } from 'lucide-react';
+import { ChevronDown, Lock, ShieldAlert, Check, X, Trash2, Eye, EyeOff } from 'lucide-react';
 import Navbar from './Navbar';
 
 const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://siyasat-backend.onrender.com/api';
@@ -43,36 +43,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
     setUpdatingId(null);
   };
 
-  const handleToggleLock = async (user) => {
-    setUpdatingId(user.id);
-    try {
-      const token = localStorage.getItem('siyasat_token') || '';
-      const res = await fetch(`${API_BASE}/admin/users/${user.id}/lock`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ action: 'unlock' })
-      });
-      
-      if (!res.ok) {
-        let errorMsg = 'Failed to update lock status';
-        try {
-          const data = await res.json();
-          errorMsg = data.message || errorMsg;
-        } catch (e) {
-          errorMsg = `Server error (${res.status}). The backend might still be deploying.`;
-        }
-        alert(`Error: ${errorMsg}`);
-      } else {
-        setLocalUsers(prev => prev.map(u => u.id === user.id ? { ...u, lockout_until: null } : u));
-      }
-    } catch (err) {
-      alert('Network error while updating lock status.');
-    }
-    setUpdatingId(null);
-  };
+
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
@@ -195,7 +166,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                     ? user.role.charAt(0).toUpperCase() + user.role.slice(1).toLowerCase() 
                     : 'Adviser';
                   const isCurrentUser = currentUser?.id === user.id || currentUser?.email === user.email;
-                  const isLocked = user.lockout_until && new Date(user.lockout_until) > new Date();
+                  const isLocked = !!user.lockout_until;
 
                   return (
                     <tr 
@@ -314,19 +285,6 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
                               </div>
                             )}
                           </div>
-
-                          {/* Unlock Account button (only visible if locked) */}
-                          {isLocked && (
-                            <button
-                              type="button"
-                              onClick={() => handleToggleLock(user)}
-                              disabled={updatingId === user.id || isCurrentUser}
-                              className="px-4 py-1.5 border font-bold text-xs rounded-full flex items-center transition-all shadow-2xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100"
-                            >
-                              <Unlock className="w-3.5 h-3.5 mr-1" />
-                              Unlock Account
-                            </button>
-                          )}
 
                           {/* Delete button & confirmation popover */}
                           <div className="relative">
