@@ -57,8 +57,14 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
       });
       
       if (!res.ok) {
-        const data = await res.json();
-        alert(`Error: ${data.message || 'Failed to update lock status'}`);
+        let errorMsg = 'Failed to update lock status';
+        try {
+          const data = await res.json();
+          errorMsg = data.message || errorMsg;
+        } catch (e) {
+          errorMsg = `Server error (${res.status}). The backend might still be deploying.`;
+        }
+        alert(`Error: ${errorMsg}`);
       } else {
         setLocalUsers(prev => prev.map(u => u.id === user.id ? { ...u, lockout_until: null } : u));
       }
