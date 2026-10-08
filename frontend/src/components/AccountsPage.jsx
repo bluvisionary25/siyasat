@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Lock, ShieldAlert, Check, X, Trash2 } from 'lucide-react';
+import { ChevronDown, Lock, ShieldAlert, Check, X, Trash2, Eye, EyeOff } from 'lucide-react';
 import Navbar from './Navbar';
 
 const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://siyasat-backend.onrender.com/api';
@@ -12,6 +12,7 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formData, setFormData] = useState({ full_name: '', email: '', password: '', role: 'Adviser' });
   const [formError, setFormError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const [localUsers, setLocalUsers] = useState(usersList);
 
@@ -355,7 +356,12 @@ const AccountsPage = ({ onNavigate, currentUser, usersList = [], onUpdateRole, o
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Password</label>
-                <input required type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#800000] focus:border-[#800000] outline-none text-sm font-semibold" placeholder="••••••••" minLength={6} />
+                <div className="relative">
+                  <input required type={showPassword ? 'text' : 'password'} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full p-2.5 pr-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#800000] focus:border-[#800000] outline-none text-sm font-semibold" placeholder="••••••••" minLength={6} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Role</label>

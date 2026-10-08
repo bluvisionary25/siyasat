@@ -235,14 +235,15 @@ const HomePage = ({
 }) => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
   const navigate = useNavigate();
 
   const handleNavigation = (path) => {
-      navigate(path);
-      // Small timeout ensures the DOM updates before scrolling
-      setTimeout(() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
+    navigate(path);
+    // Small timeout ensures the DOM updates before scrolling
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
   // Normalize role - strict unauthenticated guest default
@@ -266,7 +267,14 @@ const HomePage = ({
 
   const handleSearchSubmit = (e) => {
     if (e) e.preventDefault();
+    setHasSearched(true);
     const trimmed = searchKeyword.trim();
+    
+    // Do not navigate if there are no local results to prevent the message from flashing and disappearing
+    if (filteredTheses.length === 0 && trimmed !== '') {
+      return;
+    }
+
     try {
       if (trimmed) {
         window.history.pushState(null, '', `?search=${encodeURIComponent(trimmed)}`);
@@ -340,7 +348,7 @@ const HomePage = ({
   ];
 
   const allTheses = (Array.isArray(thesesList) && thesesList.length > 0) ? thesesList : defaultPapers;
-  
+
   let filteredTheses = allTheses;
   const rawQ = searchKeyword.trim().toLowerCase();
   if (rawQ) {
@@ -511,19 +519,20 @@ const HomePage = ({
                 <input
                   type="text"
                   value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  onChange={(e) => {
+                    setSearchKeyword(e.target.value);
+                    setHasSearched(false);
+                  }}
                   placeholder="Search some keywords..."
-                  className="w-full bg-[#5E090B]/90 text-white placeholder-white/60 border border-white/20 rounded-full py-3 pl-11 pr-12 text-xs focus:outline-none focus:border-[#E59819] focus:ring-1 focus:ring-[#E59819] transition-all shadow-inner"
+                  className="w-full bg-[#5E090B]/90 text-white placeholder-white/60 border border-white/20 rounded-full py-3 pl-11 pr-6 text-xs focus:outline-none focus:border-[#E59819] focus:ring-1 focus:ring-[#E59819] transition-all shadow-inner"
                 />
-                <button
-                  type="submit"
-                  aria-label="Search"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white cursor-pointer transition-colors"
-                >
-                  <Search className="w-4 h-4" />
-                </button>
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/70 pointer-events-none" />
               </form>
+              {hasSearched && displayedTheses.length === 0 && (
+                <p className="text-white mt-4 text-center animate-in fade-in">
+                  No papers or matching keywords found.
+                </p>
+              )}
             </div>
 
             {/* 4 Featured Research Cards */}
